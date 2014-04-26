@@ -1,12 +1,14 @@
 import query
 
 def main():
-	res = query.get_tx_list("1PXT49LGmJMWHGGtUi8nn83s2D8mANbsm1")
+	res = query.explore("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",layers=2)
 
-	for tx in res:
-		print tx.id
-		print tx.inputs
-		print tx.outputs
+	for addr in res.itervalues():
+		print addr.address
+		print "sends to: "+", ".join(addr.sends_to)
+		print "receives from: "+", ".join(addr.receives_from)
+		print "balance: "+str(addr.balance)
+
 
 if __name__ == "__main__":
 	main()
