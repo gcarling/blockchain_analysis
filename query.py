@@ -84,3 +84,58 @@ def explore(address,layers=1,forward=True,explored={}):
 			if input not in explored:
 				explore(input,layers-1,forward,explored)
 	return explored
+
+#takes a list of transactions, builds json to represent this list for our graph
+def format_nodes(transactions):
+	#transactions is a list of TX objects
+	#positions is going to map addresses to places in our node list
+	at = 0
+	positions = {}
+	#occurs will keep track of how many links each node is involved in, this comes into play with size
+	occurs = {}
+	#build the nodes
+	nodes = []
+	for tx in transactions:
+		addresses = tx.inputs + tx.outputs
+		for data in addresses:
+			addr = data[0]
+			if addr not in positions:
+				#add index so we have it for later
+				positions[addr] = at
+				at += 1
+				#update occurances
+				occurs[addr] = 1
+			else:
+				occurs[addr] = occurs[addr] + 1
+	#build the nodes themselves
+	for addr in occurs:
+		#make the actual node
+		temp = {}
+		temp['address'] = addr
+		temp['size'] = occurs[addr]
+		nodes.append(temp)
+	#now build the links
+	links = []
+	for tx in transactions:
+		for data in tx.inputs:
+			sender = data[0]
+			for data in tx.outputs:
+				receiver = data[0]
+				#get index of sender and receiver
+				sender_ind = positions[sender]
+				receiver_ind = positions[receiver]
+				#make link from indexes
+				link = {}
+				link['source'] = sender_ind
+				link['target'] = receiver_ind
+				links.append(link)
+
+	#build final graph
+	graph = {}
+	graph['nodes'] = nodes
+	graph['links'] = links
+
+	#dump json
+	print json.dumps(graph, separators=(',',': '))
+		
+
