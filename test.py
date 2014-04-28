@@ -1,4 +1,5 @@
 import query
+import format
 
 def main():
 	res = query.explore("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",layers=2)
@@ -12,8 +13,8 @@ def main():
 		# print "balance: "+str(addr.balance)
 		for tx in addr.tx:
 			transactions.append(tx)
-	query.format_nodes(transactions)
-
+			
+	format.transactions_to_graph(transactions)
 
 if __name__ == "__main__":
 	main()
