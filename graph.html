@@ -36,9 +36,13 @@ var force = d3.layout.force()
     .size([width, height]);
 
 d3.json("graph.json", function(error, graph) {
+
+  var nodes = graph.nodes
+  var links = graph.links
+
   force
-      .nodes(graph.nodes)
-      .links(graph.links)
+      .nodes(nodes)
+      .links(links)
       .start();
 
     // build the arrow.
