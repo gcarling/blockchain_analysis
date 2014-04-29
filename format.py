@@ -1,3 +1,4 @@
+import json
 #takes a list of transactions, builds json to represent this list for our graph
 def transactions_to_graph(transactions):
 	#transactions is a list of TX objects
@@ -86,4 +87,4 @@ def transactions_to_graph(transactions):
 	graph['links'] = links
 
 	#dump json
-	print json.dumps(graph, separators=(',',': '))
+	return json.dumps(graph, separators=(',',': '))
