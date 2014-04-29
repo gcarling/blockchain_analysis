@@ -1,27 +1,72 @@
 // set up SVG for D3
-var width  = 960,
-    height = 500,
-    colors = d3.scale.category10();
+var width  = window.innerWidth,
+    height = window.innerHeight,
+    colors = d3.scale.category20();
 
 var svg = d3.select('body')
   .append('svg')
   .attr('width', width)
   .attr('height', height);
 
+var nodes = []
+var links = []
+var lastNodeId
+
+var addressMap = {}
 // set up initial nodes and links
 //  - nodes are known by 'id', not by index in array.
 //  - reflexive edges are indicated on the node (as a bold black circle).
 //  - links are always source < target; edge directions are set by 'left' and 'right'.
-var nodes = [
-    {id: 0, reflexive: false},
-    {id: 1, reflexive: true },
-    {id: 2, reflexive: false}
-  ],
-  lastNodeId = 2,
-  links = [
-    {source: nodes[0], target: nodes[1], left: false, right: true },
-    {source: nodes[1], target: nodes[2], left: false, right: true }
-  ];
+
+function updateGraph(filename){
+  d3.json(filename, function(error, graph) {
+  var offset = nodes.length;
+  // nodes = graph.nodes;
+  // links = graph.links;
+  // lastNodeId = graph.nodes.length;
+  for (var i = 0; i < graph.nodes.length; i++){
+    var tempNode = graph.nodes[i];
+    if(tempNode.address in addressMap){
+      addressMap[tempNode.address].size += tempNode.size;
+      continue;
+    }
+    var newNode = {size: tempNode.size, address: tempNode.address};
+    // newNode.size = tempNode.size;
+    // newNode.address = tempNode.address;
+    addressMap[tempNode.address] = newNode;
+    nodes.push(newNode);
+  }
+  for (var i = 0; i < graph.links.length; i++){
+    var tempLink = graph.links[i];
+    var source = addressMap[graph.nodes[tempLink.source].address];
+    var target = addressMap[graph.nodes[tempLink.target].address];
+    var newLink = {source:source, target:target, linkNum:tempLink.linkNum};
+    // console.log('from: ' + newLink.source.address + ', to: ' + newLink.target.address);
+    // newLink.source = tempLink.source;
+    // newLink.target = tempLink.target;
+    // newLink.linkNum = tempLink.linkNum;
+    links.push(newLink);
+  }
+  restart();
+  });
+}
+
+updateGraph("test1.json");
+
+
+
+  
+
+// var nodes = [
+//     {id: 0, reflexive: false},
+//     {id: 1, reflexive: true },
+//     {id: 2, reflexive: false}
+//   ],
+//   lastNodeId = 2,
+//   links = [
+//     {source: nodes[0], target: nodes[1], left: false, right: true },
+//     {source: nodes[1], target: nodes[2], left: false, right: true }
+//   ];
 
 // init D3 force layout
 var force = d3.layout.force()
@@ -102,21 +147,30 @@ function tick() {
 
 // update graph (called when needed)
 function restart() {
+  // console.log(nodes);
   // path (link) group
   path = path.data(links);
 
+  // for (var i = 0; i < nodes.length; i++){
+  //   console.log(nodes[i]);
+  // }
+
+  // for (var i = 0; i < links.length; i++){
+  //   console.log(links[i]);
+  // }
+
   // update existing links
-  path.classed('selected', function(d) { return d === selected_link; })
-    .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
-    .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; });
+  path.classed('selected', function(d) { return d === selected_link; });
+    // .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
+    // .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; });
 
 
   // add new links
   path.enter().append('svg:path')
     .attr('class', 'link')
     .classed('selected', function(d) { return d === selected_link; })
-    .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
-    .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; })
+    // .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
+    // .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; })
     .on('mousedown', function(d) {
       if(d3.event.ctrlKey) return;
 
@@ -134,29 +188,33 @@ function restart() {
 
   // circle (node) group
   // NB: the function arg is crucial here! nodes are known by id, not by index!
-  circle = circle.data(nodes, function(d) { return d.id; });
+  circle = circle.data(nodes, function(d) { return d.address; });
 
   // update existing nodes (reflexive & selected visual states)
   circle.selectAll('circle')
-    .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.id)).brighter().toString() : colors(d.id); })
-    .classed('reflexive', function(d) { return d.reflexive; });
+    .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.id)).brighter().toString() : colors(d.id); });
+    // .classed('reflexive', function(d) { return d.reflexive; });
+
+    // circle
 
   // add new nodes
   var g = circle.enter().append('svg:g');
 
   g.append('svg:circle')
     .attr('class', 'node')
-    .attr('r', 12)
+    .attr('r', function(d){ return (d.size / 2) + 8 })
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.id)).brighter().toString() : colors(d.id); })
     .style('stroke', function(d) { return d3.rgb(colors(d.id)).darker().toString(); })
-    .classed('reflexive', function(d) { return d.reflexive; })
+    // .classed('reflexive', function(d) { return d.reflexive; })
     .on('mouseover', function(d) {
-      if(!mousedown_node || d === mousedown_node) return;
+      // if(!mousedown_node || d === mousedown_node){
+        // return;
+      // }
       // enlarge target node
-      d3.select(this).attr('transform', 'scale(1.1)');
+      d3.select(this).attr('transform', 'scale(1.2)');
     })
     .on('mouseout', function(d) {
-      if(!mousedown_node || d === mousedown_node) return;
+      // if(!mousedown_node || d === mousedown_node) return;
       // unenlarge target node
       d3.select(this).attr('transform', '');
     })
@@ -170,10 +228,10 @@ function restart() {
       selected_link = null;
 
       // reposition drag line
-      drag_line
-        .style('marker-end', 'url(#end-arrow)')
-        .classed('hidden', false)
-        .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' + mousedown_node.y);
+      // drag_line
+        // .style('marker-end', 'url(#end-arrow)')
+        // .classed('hidden', false)
+        // .attr('d', 'M' + mousedown_node.x + ',' + mousedown_node.y + 'L' + mousedown_node.x + ',' + mousedown_node.y);
 
       restart();
     })
@@ -194,42 +252,47 @@ function restart() {
 
       // add link to graph (update if exists)
       // NB: links are strictly source < target; arrows separately specified by booleans
-      var source, target, direction;
-      if(mousedown_node.id < mouseup_node.id) {
-        source = mousedown_node;
-        target = mouseup_node;
-        direction = 'right';
-      } else {
-        source = mouseup_node;
-        target = mousedown_node;
-        direction = 'left';
-      }
+      // var source, target, direction;
+      // if(mousedown_node.id < mouseup_node.id) {
+      //   source = mousedown_node;
+      //   target = mouseup_node;
+      //   direction = 'right';
+      // } else {
+      //   source = mouseup_node;
+      //   target = mousedown_node;
+      //   direction = 'left';
+      // }
 
-      var link;
-      link = links.filter(function(l) {
-        return (l.source === source && l.target === target);
-      })[0];
+      // var link;
+      // link = links.filter(function(l) {
+      //   return (l.source === source && l.target === target);
+      // })[0];
 
-      if(link) {
-        link[direction] = true;
-      } else {
-        link = {source: source, target: target, left: false, right: false};
-        link[direction] = true;
-        links.push(link);
-      }
+      // if(link) {
+      //   link[direction] = true;
+      // } else {
+      //   link = {source: source, target: target, left: false, right: false};
+      //   link[direction] = true;
+      //   links.push(link);
+      // }
 
-      // select new link
-      selected_link = link;
-      selected_node = null;
+      // // select new link
+      // selected_link = link;
+      // selected_node = null;
       restart();
     });
 
+        g.append("svg:title")
+        .text(function(d){
+          return d.address;
+        })
+
   // show node IDs
-  g.append('svg:text')
-      .attr('x', 0)
-      .attr('y', 4)
-      .attr('class', 'id')
-      .text(function(d) { return d.id; });
+  // g.append('svg:text')
+  //     .attr('x', 0)
+  //     .attr('y', 4)
+  //     .attr('class', 'id')
+  //     .text(function(d) { return d.id; });
 
   // remove old nodes
   circle.exit().remove();
@@ -237,6 +300,8 @@ function restart() {
   // set the graph in motion
   force.start();
 }
+
+
 
 // function mousedown() {
 //   alert('hi');
@@ -322,6 +387,8 @@ function keydown() {
       selected_node = null;
       restart();
       break;
+    case 69: //E
+      updateGraph("test2.json");
     // case 66: // B
     //   if(selected_link) {
     //     // set link direction to both left and right
@@ -371,4 +438,5 @@ function keyup() {
 d3.select(window)
   .on('keydown', keydown)
   .on('keyup', keyup);
-restart();
+
+// });

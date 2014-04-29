@@ -4,9 +4,10 @@ import format
 def main():
 	
 
-	#res = query.explore("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",layers=2)
+	# res = query.explore("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",layers=2
+	res = query.explore("1JSmxh6JofW5jcQBeQiR1M4XRhYqMET4Ck",layers=1);
 
-	res = query.explore(max_nodes=10,predicate=query.round_numbers)
+	# res = query.explore(max_nodes=10,predicate=query.round_numbers)
 
 	transactions = []
 	for addr in res.itervalues():
@@ -17,7 +18,7 @@ def main():
 		for tx in addr.tx:
 			transactions.append(tx)
 
-	format.transactions_to_graph(transactions)
+	print format.transactions_to_graph(transactions)
 
 def group_entity():
 
