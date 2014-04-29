@@ -15,9 +15,24 @@ class Address:
 		self.sends_to = set()
 		self.receives_from = set()
 
-	def fill_tx(self):
+	def fill_tx(self, direction=0):
 		if self.tx == None:
 			self.tx = get_tx_list(self.address)
+
+			for tx in self.tx:
+				fine = False
+				if direction == 0:
+					fine = True
+				if direction == 1: #no backwards, want tx with ourselves as sender
+					for o in tx.inputs:
+						if o[0] == self.address:
+							fine = True
+				elif direction == 2: #no forwards, want tx with ourselves as receiver
+					for o in tx.outputs:
+						if o[0] == self.address:
+							fine = True
+				if fine == False:
+					self.tx.remove(tx)
 	
 	def balance(self):
 		if self.balance == None:
