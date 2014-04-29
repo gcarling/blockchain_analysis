@@ -15,9 +15,24 @@ class Address:
 		self.sends_to = set()
 		self.receives_from = set()
 
-	def fill_tx(self):
+	def fill_tx(self, direction=0):
 		if self.tx == None:
 			self.tx = get_tx_list(self.address)
+
+			for tx in self.tx:
+				fine = False
+				if direction == 0:
+					fine = True
+				if direction == 1: #no backwards, want tx with ourselves as sender
+					for o in tx.inputs:
+						if o[0] == self.address:
+							fine = True
+				elif direction == 2: #no forwards, want tx with ourselves as receiver
+					for o in tx.outputs:
+						if o[0] == self.address:
+							fine = True
+				if fine == False:
+					self.tx.remove(tx)
 	
 	def balance(self):
 		if self.balance == None:
@@ -67,20 +82,40 @@ def get_tx_list(address):
 			map(lambda j:(j["addr"],j["value"],reverse_spent(j["spent"])),tx["out"])))
 	return txs
 
-def explore(address,layers=1,forward=True,explored={}):
+def round_numbers(root,address):
+	amount = -1
+	for tx in root.tx:
+		outputs = []
+		the_output = -1
+		for out in tx.outputs:
+			if out[0] == address:
+				the_output = out[1]
+			else:
+				outputs.append(out[1])
+		if more_round(the_output,outputs):
+			return True
+
+	return False
+
+def more_round(num,list_of_num):
+	# return if that number has a higher percentage of zeros than the other numbers
+	return sorted(list_of_num+[num], key=lambda a:len(str(a).rstrip('0'))*1.0/len(str(a)))[0] == num
+
+def explore(address,layers=1,max_nodes=None,forward=True,predicate=(lambda a,b:True),explored={}):
 	root = Address(address)
 	root.fill_tx()
 	root.calc()
 	explored[address] = root
 
-	if layers == 0:
+	if (max_nodes == None and layers == 0) or (len(explored) >= max_nodes):
 		return explored
 	elif forward == True:
 		for out in root.sends_to:
-			if out not in explored:
-				explore(out,layers-1,forward,explored)
+			if out not in explored and predicate(root,out):
+				explore(out,layers-1,max_nodes=max_nodes,forward=forward,explored=explored)
 	elif forward == False:
-		for input in root.receives_from:
-			if input not in explored:
-				explore(input,layers-1,forward,explored)
+		for inp in root.receives_from:
+			if inp not in explored and predicate(root,inp):
+				explore(inp,layers-1,max_nodes=max_nodes,forward=forward,explored=explored)
+
 	return explored
