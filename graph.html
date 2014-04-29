@@ -30,9 +30,15 @@ var svg = d3.select("body").append("svg")
     .attr("height", height);
 
 var force = d3.layout.force()
-    .gravity(.05)
-    .distance(100)
-    .charge(-100)
+    .gravity(0.1)
+    .linkDistance(function(d){
+      console.log(d);
+      return (d.source.size + d.target.size) * 10;
+    })
+    .linkStrength(0.5)
+    .charge(function(d){
+      return d.size * -50;
+    })
     .size([width, height]);
 
 d3.json("graph.json", function(error, graph) {
@@ -57,9 +63,12 @@ d3.json("graph.json", function(error, graph) {
 
   var link = svg.append("svg:g").selectAll("path")
       .data(graph.links)
-      .enter().append("svg:path")
+      .enter().append("polyline")
       .attr("class", "link")
-      .attr("marker-end", "url(#tx)");
+      .attr("marker-mid", "url(#tx)");
+
+  // link.transition()
+
 
   var node = svg.selectAll(".node")
       .data(graph.nodes)
@@ -93,30 +102,31 @@ d3.json("graph.json", function(error, graph) {
   //       .attr("x2", function(d) { return d.target.x; })
   //       .attr("y2", function(d) { return d.target.y; });
 
-  force.on("tick", function () {
-    link.attr("d", function(d, i) {
-      // if (i == 0)
-        // console.log(d);
-    var dx = d.target.x - d.source.x,
-        dy = d.target.y - d.source.y,
-        dr = Math.sqrt(dx * dx + dy * dy) / (d.linkNum - 1),
-        mx = d.source.x + dx,
-        my = d.source.y + dy;
-    if (d.linkNum == 1){
-      dr = 0;
-    }
-    return [
-      "M",d.source.x,d.source.y,
-      // "A",dr,dr,0,0,1,mx,my,
-      "A",dr,dr,0,0,1,d.target.x,d.target.y
-    ].join(" ");
-  });
+//   force.on("tick", function () {
+//     link.attr("d", function(d, i) {
+//       // if (i == 0)
+//         // console.log(d);
+//     var dx = d.target.x - d.source.x,
+//         dy = d.target.y - d.source.y,
+//         dr = Math.sqrt(dx * dx + dy * dy) / (d.linkNum - 1),
+//         mx = d.source.x + dx,
+//         my = d.source.y + dy;
+//     if (d.linkNum == 1){
+//       dr = 0;
+//     }
+//     return [
+//       "M",d.source.x,d.source.y,
+//       // "A",dr,dr,0,0,1,mx,my,
+//       "A",dr,dr,0,0,1,d.target.x,d.target.y
+//     ].join(" ");
+//   });
 
-  node.attr("transform", function(d) {
-    return "translate(" + d.x + "," + d.y + ")";
-  });
+//   node.attr("transform", function(d) {
+//     return "translate(" + d.x + "," + d.y + ")";
+//   });
 
-});
+// });
+
 //     link.attr("d", function(d) {
 //         var dx = d.target.x - d.source.x,
 //             dy = d.target.y - d.source.y,
@@ -133,14 +143,14 @@ d3.json("graph.json", function(error, graph) {
 //         return "translate(" + d.x + "," + d.y + ")"; });
 // });
 
-  // force.on("tick", function() {
-  //  link.attr("points", function(d) {
-  //     return d.source.x + "," + d.source.y + " " + 
-  //            (d.source.x + d.target.x)/2 + "," + (d.source.y + d.target.y)/2 + " " +
-  //            d.target.x + "," + d.target.y; });
+  force.on("tick", function() {
+   link.attr("points", function(d) {
+      return d.source.x + "," + d.source.y + " " + 
+             (d.source.x + d.target.x)/2 + "," + (d.source.y + d.target.y)/2 + " " +
+             d.target.x + "," + d.target.y; });
 
-//     node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-//   });
+    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+  });
 });
 
 </script>
