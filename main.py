@@ -51,6 +51,11 @@ class Address:
 			self.tx = get_tx_list(self.address)
 
 			for tx in self.tx:
+
+				# (is_sender, is_receiver)
+				tx_type = (reduce((lambda a,b:a or b[0]==self.address),tx.inputs,False),
+							reduce((lambda a,b:a or b[0]==self.address),tx.outputs, False))
+
 				fine = False
 				if direction == 0:
 					fine = True
@@ -65,12 +70,12 @@ class Address:
 				if fine == False:
 					self.tx.remove(tx)
 	
-	def balance(self):
+	def get_balance(self):
 		if self.balance == None:
 			self.calc()
 		return self.balance
 
-	def received(self):
+	def get_received(self):
 		if self.balance == None:
 			self.calc()
 		return self.total_received
@@ -83,18 +88,22 @@ class Address:
 		self.total_received = 0
 		for t in self.tx:
 			type = (reduce((lambda a,b:a or b[0]==self.address),t.inputs,False),
-					reduce((lambda a,b:a or b[0]==self.address),t.outputs, False))
+						reduce((lambda a,b:a or b[0]==self.address),t.outputs, False))
+
+			logging.debug(type)
 			for i in t.inputs:
 				if i[0] == self.address:
-					self.balance -= i[1]
+					self.balance -= abs(i[1])
 				elif type[1]:
 					self.receives_from.add(i[0])
 			for i in t.outputs:
 				if i[0] == self.address:
-					self.balance += i[1]
-					self.total_received += i[1]
+					self.balance += abs(i[1])
+					self.total_received += abs(i[1])
 				elif type[0]:
 					self.sends_to.add(i[0])
+		logging.debug(self.sends_to)
+		logging.debug(self.receives_from)
 
 class TX:
 	def __init__(self,id,inputs,outputs):
@@ -110,9 +119,10 @@ def check_cache(address):
 	if c:
 		data = c.data
 	else:
-		data = urlfetch.fetch(address_url % address).content
 		c = CachedRequest()
 		c.address = address
+		c.put()
+		data = urlfetch.fetch(address_url % address).content
 		c.data = data
 		c.put()
 
@@ -249,8 +259,25 @@ class TempHandler(webapp2.RequestHandler):
     def get(self):
         self.response.out.write(graph_json.render({}))
 
+class TestHandler(webapp2.RequestHandler):
+	def get(self):
+
+		addresses = ["1FmEPt4auamXQiCs3wBhzduinPA48uGgx3"]
+		expected = [("1FmEPt4auamXQiCs3wBhzduinPA48uGgx3",0,122177650,["175fDz6KqRRaxQHEGyCKrLNTKeeQgBvmxc"],["18iegfRPbn2JD2HF6GPMBRZ97tW8V17fPu","1E3LBRx8RDxQrpGDSiWk3yAF7yDHXuuQUL"])]
+
+		for i in range(0,len(addresses)):
+			output = explore(addresses[i], layers=0, direction=1)[addresses[i]]
+
+			self.response.out.write("expecting %s got %s <br/>" % (expected[i][0], output.address))
+			self.response.out.write("expecting %d got %s <br/>" % (expected[i][1], output.get_balance()))
+			self.response.out.write("expecting %d got %s <br/>" % (expected[i][2], output.get_received()))
+			self.response.out.write("expecting %s got %s <br/>" % (str(expected[i][3]), str(output.receives_from)))
+			self.response.out.write("expecting %s got %s <br/>" % (str(expected[i][4]), str(output.sends_to)))
+			self.response.out.write("--")
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
 	('/data', DataHandler),
+	('/tests', TestHandler),
 	('/graph.json', TempHandler)
 ], debug=True)
