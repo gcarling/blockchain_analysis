@@ -100,7 +100,7 @@ def addrs_to_graph(addresses):
 	for addr in addresses.itervalues():
 		node = {}
 		node['address'] = addr.address
-		logging.debug(addr.received())
+		logging.debug(addr.get_received())
 		node['size'] = 2#math.log(addr.received())
 		node_map[addr.address] = at
 		at += 1

@@ -140,7 +140,7 @@ def check_cache(address):
 		c.data = data
 		c.put()
 
-	logging.debug("from blockchain: %s" % data)
+	logging.debug("from blockahin: %s" % data)
 
 	data = json.loads(data)
 	return data
