@@ -18,7 +18,7 @@ def main():
 		for tx in addr.tx:
 			transactions.append(tx)
 
-	print format.transactions_to_graph(transactions)
+	print format.addrs_to_graph(res)
 
 def group_entity():
 

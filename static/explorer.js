@@ -12,6 +12,7 @@ var nodes = []
 var links = []
 // var lastNodeId
 var currentColor = 0;
+var id = 0;
 
 var addressMap = {}
 // set up initial nodes and links
@@ -28,10 +29,12 @@ function updateGraph(filename){
   for (var i = 0; i < graph.nodes.length; i++){
     var tempNode = graph.nodes[i];
     if(tempNode.address in addressMap){
-      addressMap[tempNode.address].size += tempNode.size;
+      console.log('size for ' + tempNode.address + ' is going up from ' + addressMap[tempNode.address].size + ' by ' + tempNode.size);
+      addressMap[tempNode.address].size = addressMap[tempNode.address].size + tempNode.size;
       continue;
     }
-    var newNode = {size: tempNode.size, address: tempNode.address, color: currentColor};
+    var newNode = {size: tempNode.size, address: tempNode.address, color: currentColor, id: id};
+    id += 1;
     // newNode.size = tempNode.size;
     // newNode.address = tempNode.address;
     addressMap[tempNode.address] = newNode;
@@ -195,6 +198,7 @@ function restart() {
   // update existing nodes (reflexive & selected visual states)
   circle.selectAll('circle')
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); });
+    // .attr('r', function(d){ return (d.size / 2) + 8 });
     // .classed('reflexive', function(d) { return d.reflexive; });
 
     // circle
@@ -290,11 +294,11 @@ function restart() {
         })
 
   // show node IDs
-  // g.append('svg:text')
-  //     .attr('x', 0)
-  //     .attr('y', 4)
-  //     .attr('class', 'id')
-  //     .text(function(d) { return d.id; });
+  g.append('svg:text')
+      .attr('x', 0)
+      .attr('y', 4)
+      .attr('class', 'id')
+      .text(function(d) { return d.id; });
 
   // remove old nodes
   circle.exit().remove();
@@ -377,6 +381,11 @@ function keydown() {
 
   if(!selected_node && !selected_link) return;
   switch(d3.event.keyCode) {
+    case 32:
+      alert('pressed space');
+      //prompt("Copy me!",selected_node.address);
+      window.open("https://blockchain.info/address/"+selected_node.address);
+      break;
     case 8: // backspace
     case 46: // delete
       if(selected_node) {
@@ -391,8 +400,9 @@ function keydown() {
       break;
     case 69: //E
       var addr = selected_node.address;
-      var json = "data?type=explore&address=" + addr + "&layers=1&direction=1";
+      var json = "data?type=explore&address=" + addr + "&layers=0&direction=1";
       updateGraph(json);
+      break;
     // case 66: // B
     //   if(selected_link) {
     //     // set link direction to both left and right
