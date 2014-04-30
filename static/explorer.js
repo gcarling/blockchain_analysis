@@ -53,7 +53,7 @@ function updateGraph(filename){
   });
 }
 
-updateGraph("test1.json");
+updateGraph("static/test1.json");
 
 
 
