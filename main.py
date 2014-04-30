@@ -124,7 +124,7 @@ def get_label(address):
 
 	if (len(data["txs"]) > 0):
 		for o in data["txs"][0]['out']:
-			if "addr_tag" in o and o["addr"] = address:
+			if "addr_tag" in o and o["addr"] == address:
 				return o["addr_tag"]
 
 	return ""
