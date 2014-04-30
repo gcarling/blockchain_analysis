@@ -131,6 +131,7 @@ def check_cache(address):
 	if c:
 		while not c.data:
 			time.sleep(0.5)
+			c = CachedRequest.gql("WHERE address = :1", address).get()
 		data = c.data
 	else:
 		c = CachedRequest()
