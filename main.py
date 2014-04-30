@@ -202,9 +202,13 @@ class MainHandler(webapp2.RequestHandler):
 class DataHandler(webapp2.RequestHandler):
     def get(self):
 		try:
+			if self.request.get("layers") != None:
+				num_layers = int(self.request.get("layers"))
+			else:
+				num_layers = 2
 			if self.request.get("type") == "entity":
 				res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",log=(lambda a:self.response.out.write(a+"<br/>")),max_nodes=(int(self.request.get("max_nodes")) or 10),predicate=follow_entity,direction=(int(self.request.get("direction")) or 0))
-			res = explore(self.request.get("address") or "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",log=(lambda a:self.response.out.write(a+"<br/>")),layers=(int(self.request.get("layers")) or 2),direction=(int(self.request.get("direction")) or 0))
+			res = explore(self.request.get("address") or "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",log=(lambda a:self.response.out.write(a+"<br/>")),layers=(num_layers),direction=(int(self.request.get("direction")) or 0))
 		except ValueError:
 			return self.response.out.write("Error: bad arguments")
 		transactions = []
