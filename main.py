@@ -41,6 +41,7 @@ class Address:
 		self.total_received = None
 		self.balance = None
 		self.tx = tx
+		self.label = ""
 
 		self.sends_to = set()
 		self.receives_from = set()
@@ -77,6 +78,7 @@ class Address:
 	def calc(self):
 		if self.tx == None:
 			self.fill_tx()
+		self.label = get_label(self.address)
 		self.balance = 0
 		self.total_received = 0
 		for t in self.tx:
@@ -103,8 +105,7 @@ class TX:
 def reverse_spent(val):
 	return "true" if val == "false" else "false"
 
-def get_tx_list(address):
-	# check cache
+def check_cache(address):
 	c = CachedRequest.gql("WHERE address = :1", address).get()
 	if c:
 		data = c.data
@@ -116,6 +117,23 @@ def get_tx_list(address):
 		c.put()
 
 	data = json.loads(data)
+	return data
+
+def get_label(address):
+	data = check_cache(address)
+
+	if (len(data["txs"]) > 0):
+		for o in data["txs"][0]['out']:
+			if "addr_tag" in o and o["addr"] = address:
+				return o["addr_tag"]
+
+	return ""
+
+def get_tx_list(address):
+	# check cache
+	data = check_cache(address)
+
+	
 	txs = []
 	for tx in data["txs"]:
 		if tx["inputs"][0] == {}:
@@ -219,7 +237,7 @@ class DataHandler(webapp2.RequestHandler):
 		#	for tx in addr.tx:
 		#		transactions.append(tx)
 
-		self.response.out.write(format.addrs_to_graph(res))
+		self.response.out.write(format.addrs_to_graph(response))
 
 class TempHandler(webapp2.RequestHandler):
     def get(self):
