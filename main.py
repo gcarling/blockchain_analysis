@@ -27,7 +27,7 @@ import time
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions=['jinja2.ext.autoescape'])
-graph_template = JINJA_ENVIRONMENT.get_template('explorer.html')
+graph_template = JINJA_ENVIRONMENT.get_template('graph.html')
 graph_json = JINJA_ENVIRONMENT.get_template('graph.json')
 
 class CachedRequest(db.Model):
@@ -260,7 +260,8 @@ class DataHandler(webapp2.RequestHandler):
 				num_layers = 2
 			if self.request.get("type") == "entity":
 				res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",log=(lambda a:self.response.out.write(a+"<br/>")),max_nodes=(int(self.request.get("max_nodes")) or 10),predicate=follow_entity,direction=(int(self.request.get("direction")) or 0))
-			res = explore(self.request.get("address") or "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",log=(lambda a:self.response.out.write(a+"<br/>")),layers=(num_layers),direction=(int(self.request.get("direction")) or 0),explored={})
+			else:		
+				res = explore(self.request.get("address") or "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",log=(lambda a:self.response.out.write(a+"<br/>")),layers=(num_layers),direction=(int(self.request.get("direction")) or 0))
 		except ValueError:
 			return self.response.out.write("Error: bad arguments")
 
