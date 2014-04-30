@@ -22,6 +22,8 @@ var addressMap = {}
 
 function updateGraph(filename){
   d3.json(filename, function(error, graph) {
+    console.log(graph.nodes);
+    console.log(graph.links);
   var offset = nodes.length;
   // nodes = graph.nodes;
   // links = graph.links;
@@ -29,7 +31,7 @@ function updateGraph(filename){
   for (var i = 0; i < graph.nodes.length; i++){
     var tempNode = graph.nodes[i];
     if(tempNode.address in addressMap){
-      console.log('size for ' + tempNode.address + ' is going up from ' + addressMap[tempNode.address].size + ' by ' + tempNode.size);
+      console.log('size for ' + addressMap[tempNode.address].id + ' is going up from ' + addressMap[tempNode.address].size + ' by ' + tempNode.size);
       addressMap[tempNode.address].size = addressMap[tempNode.address].size + tempNode.size;
       continue;
     }
@@ -40,15 +42,19 @@ function updateGraph(filename){
     addressMap[tempNode.address] = newNode;
     nodes.push(newNode);
   }
+  console.log("")
   for (var i = 0; i < graph.links.length; i++){
     var tempLink = graph.links[i];
     var source = addressMap[graph.nodes[tempLink.source].address];
     var target = addressMap[graph.nodes[tempLink.target].address];
+    console.log(source);
+    console.log(target);
     var newLink = {source:source, target:target, linkNum:tempLink.linkNum};
     // console.log('from: ' + newLink.source.address + ', to: ' + newLink.target.address);
     // newLink.source = tempLink.source;
     // newLink.target = tempLink.target;
     // newLink.linkNum = tempLink.linkNum;
+    console.log("making link between " + source.id + " and " + target.id)
     links.push(newLink);
   }
   currentColor += 1;
@@ -197,8 +203,8 @@ function restart() {
 
   // update existing nodes (reflexive & selected visual states)
   circle.selectAll('circle')
-    .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); });
-    // .attr('r', function(d){ return (d.size / 2) + 8 });
+    .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
+    .attr('r', function(d){ return (d.size / 2) + 8 });
     // .classed('reflexive', function(d) { return d.reflexive; });
 
     // circle
@@ -382,7 +388,7 @@ function keydown() {
   if(!selected_node && !selected_link) return;
   switch(d3.event.keyCode) {
     case 32:
-      alert('pressed space');
+      // alert('pressed space');
       //prompt("Copy me!",selected_node.address);
       window.open("https://blockchain.info/address/"+selected_node.address);
       break;

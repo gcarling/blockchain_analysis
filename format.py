@@ -1,4 +1,7 @@
 import json
+import math
+import logging
+
 #takes a list of transactions, builds json to represent this list for our graph
 def transactions_to_graph(transactions):
 	#transactions is a list of TX objects
@@ -97,7 +100,8 @@ def addrs_to_graph(addresses):
 	for addr in addresses.itervalues():
 		node = {}
 		node['address'] = addr.address
-		node['size'] = addr.total_received
+		logging.debug(addr.received())
+		node['size'] = 2#math.log(addr.received())
 		node_map[addr.address] = at
 		at += 1
 		nodes.append(node)
@@ -105,7 +109,7 @@ def addrs_to_graph(addresses):
 	for addr in addresses.itervalues():
 		for sent_to in addr.sends_to:
 			if sent_to not in node_map:
-				node = {'address': sent_to, 'size': 2}
+				node = {'address': sent_to, 'size': 1}
 				nodes.append(node)
 				node_map[sent_to] = at
 				at += 1

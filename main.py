@@ -187,9 +187,12 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 			2: go backwards only
 	"""
 
+
 	log = (lambda a:0)
 
 	log(str(direction))
+
+	logging.debug(explored)
 
 	root = Address(address)
 	root.fill_tx(direction=direction)
@@ -202,6 +205,7 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 
 	if (max_nodes == None and layers == 0) or (max_nodes != None and len(explored) >= max_nodes):
 		log("exiting with max_nodes: %s and layers: %d and len(explored): %d" % (str(max_nodes), layers, len(explored)))
+		logging.debug(explored)
 		return explored
 	elif direction == 0 or direction == 1:
 		for out in root.sends_to:
@@ -213,6 +217,7 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 				explore(inp,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored,log=log)
 	else:
 		log("bad! direction is: %s" % str(direction))
+
 
 	return explored	
 
@@ -229,7 +234,7 @@ class DataHandler(webapp2.RequestHandler):
 				num_layers = 2
 			if self.request.get("type") == "entity":
 				res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",log=(lambda a:self.response.out.write(a+"<br/>")),max_nodes=(int(self.request.get("max_nodes")) or 10),predicate=follow_entity,direction=(int(self.request.get("direction")) or 0))
-			res = explore(self.request.get("address") or "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",log=(lambda a:self.response.out.write(a+"<br/>")),layers=(num_layers),direction=(int(self.request.get("direction")) or 0))
+			res = explore(self.request.get("address") or "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",log=(lambda a:self.response.out.write(a+"<br/>")),layers=(num_layers),direction=(int(self.request.get("direction")) or 0),explored={})
 		except ValueError:
 			return self.response.out.write("Error: bad arguments")
 
@@ -237,6 +242,7 @@ class DataHandler(webapp2.RequestHandler):
 		#	for tx in addr.tx:
 		#		transactions.append(tx)
 
+		logging.debug(res)
 		self.response.out.write(format.addrs_to_graph(res))
 
 class TempHandler(webapp2.RequestHandler):
