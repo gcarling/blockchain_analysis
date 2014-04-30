@@ -237,7 +237,7 @@ class DataHandler(webapp2.RequestHandler):
 		#	for tx in addr.tx:
 		#		transactions.append(tx)
 
-		self.response.out.write(format.addrs_to_graph(response))
+		self.response.out.write(format.addrs_to_graph(res))
 
 class TempHandler(webapp2.RequestHandler):
     def get(self):
