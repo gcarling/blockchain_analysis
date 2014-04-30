@@ -390,7 +390,9 @@ function keydown() {
       restart();
       break;
     case 69: //E
-      updateGraph("test2.json");
+      var addr = selected_node.address;
+      var json = "data?type=explore&address=" + addr + "&layers=1&direction=1";
+      updateGraph(json);
     // case 66: // B
     //   if(selected_link) {
     //     // set link direction to both left and right

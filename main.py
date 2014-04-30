@@ -26,7 +26,7 @@ import logging
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions=['jinja2.ext.autoescape'])
-graph_template = JINJA_ENVIRONMENT.get_template('graph.html')
+graph_template = JINJA_ENVIRONMENT.get_template('explorer.html')
 graph_json = JINJA_ENVIRONMENT.get_template('graph.json')
 
 class CachedRequest(db.Model):
