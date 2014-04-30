@@ -160,7 +160,10 @@ def more_round(num,list_of_num):
 	return sorted(list_of_num+[num], key=lambda a:len(str(a).rstrip('0'))*1.0/len(str(a)))[0] == num
 
 def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:True),explored={},log=(lambda a:0)):
-	""" direction:
+	"""
+		returns list of addresses visited, each with addr.tx
+
+		direction:
 			0: go both forwards and backwards
 			1: go forwards only
 			2: go backwards only
@@ -211,12 +214,12 @@ class DataHandler(webapp2.RequestHandler):
 			res = explore(self.request.get("address") or "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",log=(lambda a:self.response.out.write(a+"<br/>")),layers=(num_layers),direction=(int(self.request.get("direction")) or 0))
 		except ValueError:
 			return self.response.out.write("Error: bad arguments")
-		transactions = []
-		for addr in res.itervalues():
-			for tx in addr.tx:
-				transactions.append(tx)
 
-		self.response.out.write(format.transactions_to_graph(transactions))
+		#for addr in res.itervalues():
+		#	for tx in addr.tx:
+		#		transactions.append(tx)
+
+		self.response.out.write(format.addrs_to_graph(res))
 
 class TempHandler(webapp2.RequestHandler):
     def get(self):
