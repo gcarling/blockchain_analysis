@@ -10,7 +10,8 @@ var svg = d3.select('body')
 
 var nodes = []
 var links = []
-var lastNodeId
+// var lastNodeId
+var currentColor = 0;
 
 var addressMap = {}
 // set up initial nodes and links
@@ -30,7 +31,7 @@ function updateGraph(filename){
       addressMap[tempNode.address].size += tempNode.size;
       continue;
     }
-    var newNode = {size: tempNode.size, address: tempNode.address};
+    var newNode = {size: tempNode.size, address: tempNode.address, color: currentColor};
     // newNode.size = tempNode.size;
     // newNode.address = tempNode.address;
     addressMap[tempNode.address] = newNode;
@@ -47,6 +48,7 @@ function updateGraph(filename){
     // newLink.linkNum = tempLink.linkNum;
     links.push(newLink);
   }
+  currentColor += 1;
   restart();
   });
 }
@@ -192,7 +194,7 @@ function restart() {
 
   // update existing nodes (reflexive & selected visual states)
   circle.selectAll('circle')
-    .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.id)).brighter().toString() : colors(d.id); });
+    .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); });
     // .classed('reflexive', function(d) { return d.reflexive; });
 
     // circle
@@ -203,8 +205,8 @@ function restart() {
   g.append('svg:circle')
     .attr('class', 'node')
     .attr('r', function(d){ return (d.size / 2) + 8 })
-    .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.id)).brighter().toString() : colors(d.id); })
-    .style('stroke', function(d) { return d3.rgb(colors(d.id)).darker().toString(); })
+    .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
+    .style('stroke', function(d) { return d3.rgb(colors(d.color)).darker().toString(); })
     // .classed('reflexive', function(d) { return d.reflexive; })
     .on('mouseover', function(d) {
       // if(!mousedown_node || d === mousedown_node){
