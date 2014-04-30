@@ -22,6 +22,7 @@ from google.appengine.api import urlfetch
 from google.appengine.ext import db
 import format
 import logging
+import time
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -46,7 +47,13 @@ class Address:
 		self.sends_to = set()
 		self.receives_from = set()
 
+		self.status = 0 # 0 is hasn't begun, 1 is fetch, 2 is ready
+
 	def fill_tx(self, direction=0):
+		if self.status == 1:
+			return -1
+		self.status = 1
+
 		if self.tx == None:
 			self.tx = get_tx_list(self.address)
 
@@ -69,20 +76,25 @@ class Address:
 							fine = True
 				if fine == False:
 					self.tx.remove(tx)
+
+			self.status = 2
 	
 	def get_balance(self):
 		if self.balance == None:
-			self.calc()
+			if self.calc() == -1:
+				return -1
 		return self.balance
 
 	def get_received(self):
 		if self.balance == None:
-			self.calc()
+			if self.calc() == -1:
+				return -1
 		return self.total_received
 		
 	def calc(self):
 		if self.tx == None:
-			self.fill_tx()
+			if self.fill_tx() == -1:
+				return -1
 		self.label = get_label(self.address)
 		self.balance = 0
 		self.total_received = 0
@@ -117,6 +129,8 @@ def reverse_spent(val):
 def check_cache(address):
 	c = CachedRequest.gql("WHERE address = :1", address).get()
 	if c:
+		while not c.data:
+			time.sleep(0.5)
 		data = c.data
 	else:
 		c = CachedRequest()
@@ -125,6 +139,8 @@ def check_cache(address):
 		data = urlfetch.fetch(address_url % address).content
 		c.data = data
 		c.put()
+
+	logging.debug("from blockchain: %s" % data)
 
 	data = json.loads(data)
 	return data
@@ -143,7 +159,6 @@ def get_tx_list(address):
 	# check cache
 	data = check_cache(address)
 
-	
 	txs = []
 	for tx in data["txs"]:
 		if tx["inputs"][0] == {}:
@@ -187,7 +202,7 @@ def more_round(num,list_of_num):
 	# return if that number has a higher percentage of zeros than the other numbers
 	return sorted(list_of_num+[num], key=lambda a:len(str(a).rstrip('0'))*1.0/len(str(a)))[0] == num
 
-def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:True),explored={},log=(lambda a:0)):
+def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:True),explored=0,log=(lambda a:0)):
 	"""
 		returns list of addresses visited, each with addr.tx
 
@@ -196,7 +211,7 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 			1: go forwards only
 			2: go backwards only
 	"""
-
+	if explored==0: explored = {}
 
 	log = (lambda a:0)
 
