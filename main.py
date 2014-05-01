@@ -27,7 +27,7 @@ import time
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
     extensions=['jinja2.ext.autoescape'])
-graph_template = JINJA_ENVIRONMENT.get_template('graph.html')
+graph_template = JINJA_ENVIRONMENT.get_template('explorer.html')
 graph_json = JINJA_ENVIRONMENT.get_template('graph.json')
 
 class CachedRequest(db.Model):
@@ -270,7 +270,11 @@ class DataHandler(webapp2.RequestHandler):
 		#		transactions.append(tx)
 
 		logging.debug(res)
-		self.response.out.write(format.addrs_to_graph(res))
+
+		if self.request.get("type") == "entity":
+			self.response.out.write(format.format_entity(res))
+		else:
+			self.response.out.write(format.addrs_to_graph(res))
 
 class TempHandler(webapp2.RequestHandler):
     def get(self):

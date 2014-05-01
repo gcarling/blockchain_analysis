@@ -102,6 +102,8 @@ def addrs_to_graph(addresses):
 		node['address'] = addr.address
 		logging.debug(addr.get_received())
 		node['size'] = 2#math.log(addr.received())
+		node['label'] = addr.label
+		logging.debug("I AM CURRENTLY RUNNING THIS CODE")
 		node_map[addr.address] = at
 		at += 1
 		nodes.append(node)
@@ -123,4 +125,17 @@ def addrs_to_graph(addresses):
 
 	return json.dumps(graph, separators=(',',': '))
 
+#takes a list of addresses, and simply formats them as a list of nodes
+def format_entity(addresses):
+	nodes = []
+	for addr in addresses.itervalues():
+		node = {'address': addr.address, 'label': addr.label}
+		nodes.append(node)
+
+	graph = {'nodes': nodes}
+
+	logging.debug('returning')
+	logging.debug(graph)
+
+	return json.dumps(graph, separators=(',',': '))
 

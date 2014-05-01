@@ -14,7 +14,12 @@ var links = []
 var currentColor = 0;
 var id = 0;
 
+//maps string address to node object
 var addressMap = {}
+//maps string address to list of string addresses we believe are the same entity
+var groupings = {}
+//maps string address to label, if known
+// var labels = {}
 // set up initial nodes and links
 //  - nodes are known by 'id', not by index in array.
 //  - reflexive edges are indicated on the node (as a bold black circle).
@@ -22,17 +27,20 @@ var addressMap = {}
 
 function updateGraph(filename){
   d3.json(filename, function(error, graph) {
-    console.log(graph.nodes);
-    console.log(graph.links);
-  var offset = nodes.length;
+    // console.log(graph.nodes);
+    // console.log(graph.links);
+  var offset = nodes.length;  
   // nodes = graph.nodes;
   // links = graph.links;
   // lastNodeId = graph.nodes.length;
   for (var i = 0; i < graph.nodes.length; i++){
     var tempNode = graph.nodes[i];
     if(tempNode.address in addressMap){
-      console.log('size for ' + addressMap[tempNode.address].id + ' is going up from ' + addressMap[tempNode.address].size + ' by ' + tempNode.size);
+      // console.log('size for ' + addressMap[tempNode.address].id + ' is going up from ' + addressMap[tempNode.address].size + ' by ' + tempNode.size);
       addressMap[tempNode.address].size = addressMap[tempNode.address].size + tempNode.size;
+      // if (labels[tempNode.address].length() == 0){
+        // labels[tempNode.address] = tempNode.label;
+      // }
       continue;
     }
     var newNode = {size: tempNode.size, address: tempNode.address, color: currentColor, id: id};
@@ -40,31 +48,123 @@ function updateGraph(filename){
     // newNode.size = tempNode.size;
     // newNode.address = tempNode.address;
     addressMap[tempNode.address] = newNode;
+    // labels[tempNode.address] = tempNode.label;
+    // console.log(tempNode.label);
+    if (!(tempNode.address in groupings)){
+      var group = getGrouping(tempNode.address);
+        if (group == null){
+          groupings[tempNode.address] = [tempNode.address]
+        }
+        else{
+          groupings[tempNode.address] = group
+        }
+    }
     nodes.push(newNode);
   }
-  console.log("")
+  // console.log("")
   for (var i = 0; i < graph.links.length; i++){
     var tempLink = graph.links[i];
     var source = addressMap[graph.nodes[tempLink.source].address];
     var target = addressMap[graph.nodes[tempLink.target].address];
-    console.log(source);
-    console.log(target);
     var newLink = {source:source, target:target, linkNum:tempLink.linkNum};
     // console.log('from: ' + newLink.source.address + ', to: ' + newLink.target.address);
     // newLink.source = tempLink.source;
     // newLink.target = tempLink.target;
     // newLink.linkNum = tempLink.linkNum;
-    console.log("making link between " + source.id + " and " + target.id)
     links.push(newLink);
+
   }
   currentColor += 1;
   restart();
   });
 }
 
+function getGrouping(address){
+  for (var addr in groupings){
+    var others = groupings[addr];
+    if (address in others){
+      return others;
+    }
+  }
+  return null;
+}
+
 updateGraph("static/test1.json");
 
-
+function updateGroups(address, filename){
+  d3.json(filename, function(error, graph) {
+    //first update groupings
+    var addrs = [];
+    for (var i = 0; i < graph.nodes.length; i++){
+      addrs.push(graph.nodes[i].address);
+    }    
+    console.log(addrs);
+    var group = groupings[address];
+    console.log(group);
+    for (var i = 0; i < addrs.length; i++){
+      if (group.indexOf(addrs[i]) === -1){
+        group.push(addrs[i]);
+      }
+    }
+    console.log(group);
+    for (var i = 0; i < group.length; i++){
+      groupings[group[i]] = group;
+    }
+    console.log(groupings[address]);
+    //now update each node that was affected
+    var node = addressMap[address];
+    var toRemove = []
+    for (var i = 0; i < group.length; i++){
+      console.log("group member: " + group[i]);
+      if (group[i] === address){
+        continue;
+      }
+      var addr = group[i];
+      if (addr in addressMap){
+        var oldNode = addressMap[addr]
+        //update map
+        addressMap[addr] = node;
+        node.size += oldNode.size;
+        //update links
+        console.log("working with: " + addr);
+        for (var j = 0; j < links.length; j++){
+          var link = links[j];
+          // console.log(link);
+          // console.log("comparing ")
+          if (link.source.address === addr){
+            console.log("found one src: " + link.source.id + " to " + link.target.id);
+            if (link.target.address === address){
+              console.log("set to remove: " + link);
+              toRemove.push(j);
+            }
+            else{
+              link.source = node;
+            }
+          }
+          if (link.target.address === addr){
+            console.log("found one tar: " + link.source.id + " to " + link.target.id);
+            console.log(link);
+            if (link.source.address === address){
+              console.log("set to remove: " + link);
+              toRemove.push(j);
+            }
+            else{
+              link.target = node;
+            }
+          }
+        }
+        //update node list
+        nodes.splice(nodes.indexOf(oldNode), 1);
+      }
+    }
+    for (var i = 0; i < toRemove.length; i++){
+      console.log("killing with: " + links[i].source.id + " to " + links[i].target.id);
+      links.splice(toRemove[i], 1);
+    }
+    // console.log("====================")
+    restart();
+  });
+}
 
   
 
@@ -204,7 +304,21 @@ function restart() {
   // update existing nodes (reflexive & selected visual states)
   circle.selectAll('circle')
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
-    .attr('r', function(d){ return (d.size / 2) + 8 });
+    .attr('r', function(d){ return (d.size / 2) + 8 })
+    .append("svg:title")
+        .text(function(d){
+          var group = groupings[d.address]
+          // console.log(group);
+          var ret = "";
+          for (var i = 0; i < group.length; i++){
+            ret += group[i];
+            if (i < group.length - 1){
+              ret += "\n";
+            }
+          }
+          // console.log(d.address + '\nnow comes the ret\n' + ret);
+          return ret;
+        });
     // .classed('reflexive', function(d) { return d.reflexive; });
 
     // circle
@@ -296,7 +410,16 @@ function restart() {
 
         g.append("svg:title")
         .text(function(d){
-          return d.address;
+          var group = groupings[d.address]
+          // console.log(group);
+          var ret = ""
+          for (var i = 0; i < group.length; i++){
+            ret += group[i];
+            if (i < group.length - 1){
+              ret += "\n";
+            }
+          }
+          return ret;
         })
 
   // show node IDs
@@ -392,22 +515,27 @@ function keydown() {
       //prompt("Copy me!",selected_node.address);
       window.open("https://blockchain.info/address/"+selected_node.address);
       break;
-    case 8: // backspace
-    case 46: // delete
-      if(selected_node) {
-        nodes.splice(nodes.indexOf(selected_node), 1);
-        spliceLinksForNode(selected_node);
-      } else if(selected_link) {
-        links.splice(links.indexOf(selected_link), 1);
-      }
-      selected_link = null;
-      selected_node = null;
-      restart();
-      break;
+    // case 8: // backspace
+    // case 46: // delete
+    //   if(selected_node) {
+    //     nodes.splice(nodes.indexOf(selected_node), 1);
+    //     spliceLinksForNode(selected_node);
+    //   } else if(selected_link) {
+    //     links.splice(links.indexOf(selected_link), 1);
+    //   }
+    //   selected_link = null;
+    //   selected_node = null;
+    //   restart();
+    //   break;
     case 69: //E
       var addr = selected_node.address;
       var json = "data?type=explore&address=" + addr + "&layers=0&direction=1";
       updateGraph(json);
+      break;
+    case 71: //G
+      var addr = selected_node.address;
+      var json = "data?type=entity&address=" + addr + "&max_nodes=10&direction=0"
+      updateGroups(addr, json);
       break;
     // case 66: // B
     //   if(selected_link) {

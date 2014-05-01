@@ -44,11 +44,14 @@ var force = d3.layout.force()
 // d3.json("graph.json", function(error, graph) {
 
 // direction: 0 -> both forward and backwards, 1 is just forwards, 2 is just backwards
-d3.json("data?type=entity&address=1GMXowv2hkGmN2AA5yhEnjAo5QrzzboMy&max_nodes=10&direction=1", function(error, graph) {
+d3.json("data?type=entity&address=1GMXowv2hkGmN2AA5yhEnjAo5QrzzboMy&max_nodes=20&direction=1", function(error, graph) {
 // d3.json("data?type=explore&address=13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg&layers=2&direction=1", function(error, graph) {
 
-  var nodes = graph.nodes
-  var links = graph.links
+  var nodes = graph.nodes;
+  var links = graph.links;
+
+  console.log(nodes);
+  console.log(links);
   
   force
       .nodes(nodes)
