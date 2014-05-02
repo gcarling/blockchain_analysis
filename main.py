@@ -20,9 +20,14 @@ import os
 import json
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
-import format
 import logging
 import time
+import zlib
+
+# local files
+import classifier
+import format
+# end local
 
 JINJA_ENVIRONMENT = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)),
@@ -46,6 +51,8 @@ class Address:
 
 		self.sends_to = set()
 		self.receives_from = set()
+
+		self.classified_as = -1
 
 		self.status = 0 # 0 is hasn't begun, 1 is fetch, 2 is ready
 
@@ -114,14 +121,25 @@ class Address:
 					self.total_received += abs(i[1])
 				elif type[0]:
 					self.sends_to.add(i[0])
-		logging.debug(self.sends_to)
-		logging.debug(self.receives_from)
+		
+		self.classified_as = classifier.classify(self)
 
 class TX:
-	def __init__(self,id,inputs,outputs):
+	def __init__(self,id,inputs,outputs,time):
 		self.id = id
 		self.inputs = inputs
 		self.outputs = outputs
+		self.time = int(time)
+
+	def address_balance(self, address):
+		balance = 0
+		for i in self.inputs:
+			if i[0] == address:
+				balance -= abs(i[1])
+		for i in self.outputs:
+			if i[0] == address:
+				balance += abs(i[1])
+		return balance
 
 def reverse_spent(val):
 	return "true" if val == "false" else "false"
@@ -132,16 +150,16 @@ def check_cache(address):
 		while not c.data:
 			time.sleep(0.5)
 			c = CachedRequest.gql("WHERE address = :1", address).get()
+		#data = zlib.decompress(c.data.encode("utf-8"))
 		data = c.data
 	else:
 		c = CachedRequest()
 		c.address = address
 		c.put()
 		data = urlfetch.fetch(address_url % address).content
+		#c.data = zlib.compress(data.encode("utf-8"))
 		c.data = data
 		c.put()
-
-	logging.debug("from blockahin: %s" % data)
 
 	data = json.loads(data)
 	return data
@@ -168,7 +186,7 @@ def get_tx_list(address):
 			inputs = map(lambda j:(j["prev_out"]["addr"],j["prev_out"]["value"]),tx["inputs"])
 		txs.append(TX(tx["hash"],
 			inputs,
-			map(lambda j:(j["addr"],j["value"],reverse_spent(j["spent"])),tx["out"])))
+			map(lambda j:(j["addr"],j["value"],reverse_spent(j["spent"])),tx["out"]),tx["time"]))
 	return txs
 
 def follow_entity(root,address):
@@ -269,8 +287,6 @@ class DataHandler(webapp2.RequestHandler):
 		#	for tx in addr.tx:
 		#		transactions.append(tx)
 
-		logging.debug(res)
-
 		if self.request.get("type") == "entity":
 			self.response.out.write(format.format_entity(res))
 		else:
@@ -287,7 +303,7 @@ class TestHandler(webapp2.RequestHandler):
 		expected = [("1FmEPt4auamXQiCs3wBhzduinPA48uGgx3",0,122177650,["175fDz6KqRRaxQHEGyCKrLNTKeeQgBvmxc"],["18iegfRPbn2JD2HF6GPMBRZ97tW8V17fPu","1E3LBRx8RDxQrpGDSiWk3yAF7yDHXuuQUL"])]
 
 		for i in range(0,len(addresses)):
-			output = explore(addresses[i], layers=0, direction=1)[addresses[i]]
+			output = explore(addresses[i], layers=0, direction=0)[addresses[i]]
 
 			self.response.out.write("expecting %s got %s <br/>" % (expected[i][0], output.address))
 			self.response.out.write("expecting %d got %s <br/>" % (expected[i][1], output.get_balance()))
@@ -296,9 +312,18 @@ class TestHandler(webapp2.RequestHandler):
 			self.response.out.write("expecting %s got %s <br/>" % (str(expected[i][4]), str(output.sends_to)))
 			self.response.out.write("--")
 
+class ClassifyHandler(webapp2.RequestHandler):
+	def get(self, addr):
+		a = Address(addr)
+		a.calc()
+		self.response.out.write(classifier.classify(a))
+		self.response.out.write("<br/>")
+		self.response.out.write(classifier.extract_features(a))
+
 app = webapp2.WSGIApplication([
     ('/', MainHandler),
 	('/data', DataHandler),
 	('/tests', TestHandler),
+	('/classify/(.*?)', ClassifyHandler),
 	('/graph.json', TempHandler)
 ], debug=True)
