@@ -130,13 +130,21 @@ def decision_tree(address):
 					return Type.faucet
 				else:
 					return Type.distributor
-			elif out_b[0] == 1000 or (out_b[0] > 4 and address.balance() == 0):
+			elif out_b[0] == 1000 or (out_b[0] > 4 and address.get_balance() == 0):
 				return Type.cold_storage
 
 			else:
 				return Type.hot_storage	
 			
 			#	Predicates.total_satoshimilliseconds
+
+def tests():
+	# 13x9weHkPTFL2TogQJz7LbpEsvpQJ1dxfa -> faucet
+	# 1Fd5WNvXE3nx9W9nr3gWzuEqELH9R4xGmZ -> solomine
+	# 1CwrK8GTwq4eQYZwTxMpL271Bpj7Zu3PUQ -> distribute
+	# 1H5pwj5uZ2jjUwU2EcUuSvyR8Z5aAWU4ZY -> single_use
+	# 1BuLgRGJdZzCfkWaKcxiTEL1ASqTFjt2Wf -> hot_storage
+	pass
 
 def classify(address):
 
