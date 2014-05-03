@@ -20,13 +20,27 @@
 		  $interpolateProvider.endSymbol('}]}');
 		})
     	.controller('AsideCtrl', ['$scope', function($scope) {
-    		$scope.addr = obj;
+    		$scope.obj = [];
+
+    		$scope.human_readable = {'address':"Address",
+    								 'label':"Blockchain.info Tag",
+    								 'classification':"Classification",
+    								 'total_received':"Total Received"};
+
+    		$scope.update = function(addr_obj) {
+    			$scope.obj = [];
+    			for (attr in $scope.human_readable) {
+    				if (addr_obj.hasOwnProperty(attr)) {
+    					$scope.obj.push([$scope.human_readable[attr],addr_obj[attr]]);
+    				}
+    			}
+    		}
     	}]);
 
     var update_aside = function(addr_obj) {
     	var scope = angular.element(document.getElementById("asidectrl")).scope();
     	scope.$apply(function(){
-    		scope.addr = addr_obj;
+    		scope.update(addr_obj);
     	});
     };
 
@@ -35,11 +49,14 @@
   
   <body ng-app="simpleDirective">
   <aside id="asidectrl" ng-controller="AsideCtrl">
-  		Known Addresses: {[{addr.address}]}<br/>
+  		<div ng-repeat="line in obj">
+  			<span> {[{line[0]}]}: {[{line[1]}]} </span>
+  		</div>
+  		<!--Known Addresses: {[{addr.address}]}<br/>
   		Blockchain.info Tag: {[{addr.label}]}<br/>
   		Classification: {[{addr.classification}]}<br/>
-  		Total Received {[{addr.total_received}]}<br/>
-  		<a target="_blank" href="https://blockchain.info/address/{[{addr.address}]}">explore on blockchain.info</a>
+  		Total Received: {[{addr.total_received}]}<br/>
+  		<a target="_blank" href="https://blockchain.info/address/{[{addr.address}]}">explore on blockchain.info</a>-->
   </aside>
   </body>
 
