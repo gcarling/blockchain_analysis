@@ -18,14 +18,19 @@ var id = 0;
 var addressMap = {}
 //maps string address to list of string addresses we believe are the same entity
 var groupings = {}
-//maps string address to label, if known
-var labels = {}
+//keep track of requested info so we don't do it again
+var expand_requests = {}
+var group_requests = {}
 // set up initial nodes and links
 //  - nodes are known by 'id', not by index in array.
 //  - reflexive edges are indicated on the node (as a bold black circle).
 //  - links are always source < target; edge directions are set by 'left' and 'right'.
 
-function updateGraph(filename){
+function updateGraph(address, filename){
+  if (address in expand_requests){
+    return;
+  }
+  expand_requests[address] = 1
   d3.json(filename, function(error, graph) {
     console.log(graph.nodes);
     // console.log(graph.links);
@@ -36,19 +41,20 @@ function updateGraph(filename){
   for (var i = 0; i < graph.nodes.length; i++){
     var tempNode = graph.nodes[i];
     if(tempNode.address in addressMap){
+      if (tempNode.label.length > 0)
+      console.log('found a label for ' + tempNode.address);
       // console.log('size for ' + addressMap[tempNode.address].id + ' is going up from ' + addressMap[tempNode.address].size + ' by ' + tempNode.size);
       addressMap[tempNode.address].size = addressMap[tempNode.address].size + tempNode.size;
-      if (labels[tempNode.address].length() == 0){
-        labels[tempNode.address] = tempNode.label;
+      if (addressMap[tempNode.address].label.length == 0){
+        addressMap[tempNode.address].label = tempNode.label;
       }
       continue;
     }
-    var newNode = {size: tempNode.size, address: tempNode.address, color: currentColor, id: id};
+    var newNode = {size: tempNode.size, address: tempNode.address, color: currentColor, id: id, label: tempNode.label};
     id += 1;
     // newNode.size = tempNode.size;
     // newNode.address = tempNode.address;
     addressMap[tempNode.address] = newNode;
-    // labels[tempNode.address] = tempNode.label;
     // console.log(tempNode.label);
     if (!(tempNode.address in groupings)){
       var group = getGrouping(tempNode.address);
@@ -88,9 +94,13 @@ function getGrouping(address){
   }
   return null;
 }
-updateGraph("data?type=explore&address=13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg&layers=0&direction=1");
+updateGraph("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg", "data?type=explore&address=13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg&layers=0&direction=1");
 
 function updateGroups(address, filename){
+  if (address in group_requests){
+    return;
+  }
+  group_requests[address] = 1
   d3.json(filename, function(error, graph) {
     //first update groupings
     var addrs = [];
@@ -247,6 +257,24 @@ function tick() {
   });
 }
 
+function getLabel(d){
+  if (d.label.length > 0){
+    return d.label;
+  }
+  var group = groupings[d.address]
+  // console.log(group);
+  var ret = "";
+  for (var i = 0; i < group.length; i++){
+    ret += group[i];
+    if (i < group.length - 1){
+      ret += "\n";
+    }
+  }
+  // console.log(d.address + '\nnow /comes the ret\n' + ret);
+  // console.log("...");
+  return ret;
+}
+
 // update graph (called when needed)
 function restart() {
   // console.log(nodes);
@@ -298,20 +326,7 @@ function restart() {
     .attr('r', function(d){ return (d.size / 2) + 8 })
     .append("title")
         .text(function(d){
-          var group = groupings[d.address]
-          // console.log(group);
-          var ret = "";
-          for (var i = 0; i < group.length; i++){
-            ret += group[i];
-            if (i < group.length - 1){
-              ret += "\n";
-            }
-          }
-          // console.log(d.address + '\nnow /comes the ret\n' + ret);
-          // console.log("...");
-          if (d.address in labels)
-            re
-          return ret;
+          return getLabel(d);
         });
     // .classed('reflexive', function(d) { return d.reflexive; });
 
@@ -345,6 +360,7 @@ function restart() {
       mousedown_node = d;
       if(mousedown_node === selected_node) selected_node = null;
       else selected_node = mousedown_node;
+      update_aside(selected_node);
       selected_link = null;
 
       // reposition drag line
@@ -404,16 +420,7 @@ function restart() {
 
         g.append("svg:title")
         .text(function(d){
-          var group = groupings[d.address]
-          // console.log(group);
-          var ret = ""
-          for (var i = 0; i < group.length; i++){
-            ret += group[i];
-            if (i < group.length - 1){
-              ret += "\n";
-            }
-          }
-          return ret;
+          return getLabel(d);
         })
 
   // show node IDs
@@ -525,7 +532,7 @@ function keydown() {
       d3.event.preventDefault();
       var addr = selected_node.address;
       var json = "data?type=explore&address=" + addr + "&layers=0&direction=1";
-      updateGraph(json);
+      updateGraph(addr, json);
       break;
     case 71: //G
       d3.event.preventDefault();

@@ -102,7 +102,10 @@ def addrs_to_graph(addresses):
 		node['address'] = addr.address
 		logging.debug(addr.get_received())
 		node['size'] = 2#math.log(addr.received())
+		logging.debug(addr.label)
 		node['label'] = addr.label
+		node['classification'] = addr.classified_as
+		node['total_received'] = addr.total_received
 		logging.debug("I AM CURRENTLY RUNNING THIS CODE")
 		node_map[addr.address] = at
 		at += 1
