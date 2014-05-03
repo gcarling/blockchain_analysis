@@ -47,12 +47,12 @@ class Address:
 		self.total_received = None
 		self.balance = None
 		self.tx = tx
-		self.label = ""
 
 		self.sends_to = set()
 		self.receives_from = set()
 
 		self.classified_as = -1
+		self.label = ""
 
 		self.status = 0 # 0 is hasn't begun, 1 is fetch, 2 is ready
 

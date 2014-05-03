@@ -41,7 +41,7 @@ class PredicatesC:
 				out_count += 1
 
 		if out_count == 0:
-			return (0, in_count, 0)
+			return (10000, in_count, 0)
 		return (in_count / out_count, in_count, out_count)
 
 	def outputs_balance(self, address):
@@ -57,7 +57,7 @@ class PredicatesC:
 				out_count += len(tx.outputs)
 
 		if out_count == 0:
-			return (0, in_count, 0)
+			return (10000, in_count, 0)
 		return (in_count / out_count, in_count, out_count)
 
 	def pays_with_others(self,address):
@@ -77,7 +77,7 @@ class PredicatesC:
 		t = 0
 		holding = 0
 		sm = 0
-		for tx in address.tx:
+		for tx in address.tx[::-1]:
 			sm += holding * (tx.time - t)
 			t = tx.time
 			holding += tx.address_balance(address.address)
@@ -130,7 +130,7 @@ def decision_tree(address):
 					return Type.faucet
 				else:
 					return Type.distributor
-			elif out_b[0] == 1000 or (out_b[0] > 4 and address.get_balance() == 0):
+			elif out_b[0] == 10000 or (out_b[0] > 4 and address.get_balance() == 0):
 				return Type.cold_storage
 
 			else:
