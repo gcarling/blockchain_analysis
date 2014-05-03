@@ -11,13 +11,13 @@
 		 .config(function($interpolateProvider) {
 		  $interpolateProvider.startSymbol('{[{');
 		  $interpolateProvider.endSymbol('}]}');
-		});
+		})
     	.controller('AsideController', ['$scope', function($scope) {
     		$scope.addr = {
     			address: '[address]',
     			label: '[label]',
     			classification: '[classification]',
-    			total_received: '[total_received']
+    			total_received: '[total_received]',
     		}
     	}])
     	.directive('allData', function() {
