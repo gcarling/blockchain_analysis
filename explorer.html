@@ -7,35 +7,39 @@
     <script src="static/angular.min.js"></script>
     <script>
 
-    angular.module('simpleDirective', [])
+    var obj = {
+		address: '[address]',
+		label: '[label]',
+		classification: '[classification]',
+		total_received: '[total_received]',
+	};
+
+    var module = angular.module('simpleDirective', [])
 		 .config(function($interpolateProvider) {
 		  $interpolateProvider.startSymbol('{[{');
 		  $interpolateProvider.endSymbol('}]}');
 		})
-    	.controller('AsideController', ['$scope', function($scope) {
-    		$scope.addr = {
-    			address: '[address]',
-    			label: '[label]',
-    			classification: '[classification]',
-    			total_received: '[total_received]',
-    		}
-    	}])
-    	.directive('allData', function() {
-    		return {
-    			template: "Known Addresses: {[{addr.address}]}<br/> Blockchain.info Tag: {[{addr.label}]}<br/> Classification: {[{addr.classification}]}"
-    		}
-    	})
+    	.controller('AsideCtrl', ['$scope', function($scope) {
+    		$scope.addr = obj;
+    	}]);
+
+    var update_aside = function(addr_obj) {
+    	var scope = angular.element(document.getElementById("asidectrl")).scope();
+    	scope.$apply(function(){
+    		scope.addr = addr;
+    	});
+    };
 
     </script>
   </head>
   
   <body ng-app="simpleDirective">
-  <aside ng-controller="AsideController">
-  		<div all-data></div>
-  		<!--Blockchain.info Tag:<span my-label></span>
-  		Classification:<span my-classification></span>
-  		Total Received<span my-total-received></span>-->
-  		<!--<a href=""></span>-->
+  <aside id="asidectrl" ng-controller="AsideCtrl">
+  		Known Addresses: {[{addr.address}]}<br/>
+  		Blockchain.info Tag: {[{addr.label}]}<br/>
+  		Classification: {[{addr.classification}]}<br/>
+  		Total Received {[{addr.total_received}]}<br/>
+  		<a href="https://blockchain.info/address/{[{address}]}">explore on blockchain.info</a>
   </aside>
   </body>
 
