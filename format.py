@@ -111,7 +111,7 @@ def addrs_to_graph(addresses):
 	for addr in addresses.itervalues():
 		for sent_to in addr.sends_to:
 			if sent_to not in node_map:
-				node = {'address': sent_to, 'size': 1}
+				node = {'address': sent_to, 'size': 1, 'label':""}
 				nodes.append(node)
 				node_map[sent_to] = at
 				at += 1
