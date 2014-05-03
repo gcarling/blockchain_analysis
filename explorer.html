@@ -8,6 +8,10 @@
     <script>
 
     angular.module('simpleDirective', [])
+		 .config(function($interpolateProvider) {
+		  $interpolateProvider.startSymbol('{[{');
+		  $interpolateProvider.endSymbol('}]}');
+		});
     	.controller('AsideController', ['$scope', function($scope) {
     		$scope.addr = {
     			address: '[address]',
@@ -18,7 +22,7 @@
     	}])
     	.directive('allData', function() {
     		return {
-    			template: "Known Addresses: {{addr.address}}<br/> Blockchain.info Tag: {{addr.label}}<br/> Classification: {{addr.classification}}"
+    			template: "Known Addresses: {[{addr.address}]}<br/> Blockchain.info Tag: {[{addr.label}]}<br/> Classification: {[{addr.classification}]}"
     		}
     	})
 
