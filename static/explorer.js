@@ -15,7 +15,7 @@ var currentColor = 0;
 var id = 0;
 
 //classification finder
-var classifiers = ["single_use","hot_storage","cold_storage","mining_pool","mining_solo","faucet","distributor","unknown"]
+var classifiers = ["single_use","hot_storage","cold_storage","mining_pool","mining_solo","faucet","distributor","unknown",undefined]
 //maps string address to node object
 var addressMap = {}
 //maps string address to list of string addresses we believe are the same entity
@@ -72,8 +72,11 @@ function updateGraph(shouldApply, wasClicked, address, filename){
       old.label = tempNode.label;
       old.classification = tempNode.classification;
       old.total_received = tempNode.total_received;
+      old.color = classifiers.indexOf(old.classification);
     }
-    var newNode = {size: tempNode.size, address: tempNode.address, color: classifiers.indexOf(tempNode.classification), id: id, label: tempNode.label, classification: tempNode.classification, total_received: tempNode.total_received};
+    var c = classifiers.indexOf(tempNode.classification)
+    console.log('got a color for a node: ' + c + ', with class: ' + tempNode.classification);
+    var newNode = {size: tempNode.size, address: tempNode.address, color: c, id: id, label: tempNode.label, classification: tempNode.classification, total_received: tempNode.total_received};
     id += 1;
     // newNode.size = tempNode.size;
     // newNode.address = tempNode.address;
@@ -95,6 +98,9 @@ function updateGraph(shouldApply, wasClicked, address, filename){
   currentColor += 1;
   if (shouldApply){
       applyGraphUpdates(address);
+  }
+  else{
+    restart();
   }
   if (wasClicked){
       updateBox(addressMap[address]);
@@ -388,6 +394,7 @@ function restart() {
   // update existing nodes (reflexive & selected visual states)
   circle.selectAll('circle')
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
+    .style('stroke', function(d) { return d3.rgb(colors(d.color)).darker().toString(); })
     .attr('r', function(d){ return (d.size / 2) + 8 })
     .append("title")
         .text(function(d){
@@ -423,8 +430,8 @@ function restart() {
 
       // select node
       mousedown_node = d;
-      if(mousedown_node === selected_node) selected_node = null;
-      else selected_node = mousedown_node;
+      // if(mousedown_node === selected_node) selected_node = null;
+      selected_node = mousedown_node;
       updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=1");
       selected_link = null;
 
