@@ -1,13 +1,11 @@
-from protorpc.messages import Enum
-
-class Type(Enum):
-	single_use = 1
-	hot_storage = 2
-	cold_storage = 3
-	mining_pool = 4
-	mining_solo = 5
-	faucet = 6
-	distributor = 7
+class Type:
+	single_use = "single_use"
+	hot_storage = "hot_storage"
+	cold_storage = "cold_storage"
+	mining_pool = "mining_pool"
+	mining_solo = "mining_solo"
+	faucet = "faucet"
+	distributor = "distributor"
 
 	unknown = 100
 
@@ -151,4 +149,3 @@ def classify(address):
 	#features = extract_features(address)
 
 	return decision_tree(address)
-
