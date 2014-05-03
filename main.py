@@ -169,9 +169,10 @@ def get_label(address):
 	data = check_cache(address)
 
 	if (len(data["txs"]) > 0):
-		for o in data["txs"][0]['out']:
-			if "addr_tag" in o and o["addr"] == address:
-				return o["addr_tag"]
+		for t in data["txs"]:
+			for o in t['out']:
+				if "addr_tag" in o and o["addr"] == address:
+					return o["addr_tag"]
 
 	return ""
 

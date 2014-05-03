@@ -4,9 +4,35 @@
     <meta charset="utf-8">
     <title>Address Explorer</title>
     <link rel="stylesheet" href="static/explorer.css">
+    <script src="static/angular.min.js"></script>
+    <script>
+
+    angular.module('simpleDirective', [])
+    	.controller('AsideController', ['$scope', function($scope) {
+    		$scope.addr = {
+    			address: '[address]',
+    			label: '[label]',
+    			classification: '[classification]',
+    			total_received: '[total_received']
+    		}
+    	}])
+    	.directive('allData', function() {
+    		return {
+    			template: "Known Addresses: {{addr.address}}<br/> Blockchain.info Tag: {{addr.label}}<br/> Classification: {{addr.classification}}"
+    		}
+    	})
+
+    </script>
   </head>
   
   <body>
+  <aside ng-controller="AsideController">
+  		<div all-data></div>
+  		<!--Blockchain.info Tag:<span my-label></span>
+  		Classification:<span my-classification></span>
+  		Total Received<span my-total-received></span>-->
+  		<!--<a href=""></span>-->
+  </aside>
   </body>
 
   <script src="http://d3js.org/d3.v3.min.js"></script>
