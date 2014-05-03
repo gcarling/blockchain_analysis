@@ -7,7 +7,7 @@ class Type:
 	faucet = "faucet"
 	distributor = "distributor"
 
-	unknown = 100
+	unknown = "unknown"
 
 class PredicatesC:
 
