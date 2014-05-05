@@ -30,7 +30,7 @@
     		$scope.update = function(addr_obj) {
     			$scope.obj = [];
     			for (attr in $scope.human_readable) {
-    				if (addr_obj.hasOwnProperty(attr)) {
+    				if (addr_obj.hasOwnProperty(attr) && addr_obj[attr] != "") {
     					$scope.obj.push([$scope.human_readable[attr],addr_obj[attr]]);
     				}
     			}

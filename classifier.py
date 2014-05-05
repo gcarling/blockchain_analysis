@@ -128,7 +128,7 @@ def decision_tree(address):
 					return Type.faucet
 				else:
 					return Type.distributor
-			elif out_b[0] == 10000 or (out_b[0] > 4 and address.get_balance() == 0):
+			elif out_b[0] == 10000 or (out_b[0] > 2 and tx_b[0] > 2 and address.get_balance() == 0):
 				return Type.cold_storage
 
 			else:
