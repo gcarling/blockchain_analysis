@@ -297,6 +297,29 @@ class TestHandler(webapp2.RequestHandler):
 			self.response.out.write("expecting %s got %s <br/>" % (str(expected[i][4]), str(output.sends_to)))
 			self.response.out.write("--")
 
+class MassGroupHandler(webapp2.RequestHandler):
+	def get(self):
+		f = open('tags.tsv','r').read().split("\n")
+		out = {}
+		for g in f:
+			out[g[0]] = [[],[]]
+			addrs = explore(g[0],max_nodes=10,predicate=follow_entity,direction=0)
+			for a in addrs:
+				out[g[0]][0] += list(a.sends_to)
+				out[g[0]][1] += list(a.receives_from)
+
+		ii = {}
+
+		for a,x in out.iteritems():
+			for y in x:
+				if not x in ii:
+					ii[x] = []
+				ii[x].append(a)
+
+		for a,x in ii.iteritems():
+			if len(x) > 1:
+				self.response.out.write(a+": "+str(x))
+
 class ClassifyHandler(webapp2.RequestHandler):
 	def get(self, addr):
 		a = Address(addr)
@@ -310,5 +333,6 @@ app = webapp2.WSGIApplication([
 	('/data', DataHandler),
 	('/tests', TestHandler),
 	('/classify/(.*?)', ClassifyHandler),
-	('/graph.json', TempHandler)
+	('/graph.json', TempHandler),
+	('/domass', MassGroupHandler)
 ], debug=True)
