@@ -1,7 +1,9 @@
 // set up SVG for D3
-var width  = window.innerWidth,
-    height = window.innerHeight,
+var width  = window.innerWidth * 4,
+    height = window.innerHeight * 4,
     colors = d3.scale.category10();
+
+window.scrollTo(window.innerWidth * 2, window.innerHeight * 2);
 
 var svg = d3.select('body')
   .append('svg')
@@ -13,6 +15,8 @@ var links = []
 // var lastNodeId
 var currentColor = 0;
 var id = 0;
+
+var start_point = "1Aaykbf4iJ8d4UTh2LCjNGZyicqkFresdp"
 
 //classification finder
 var classifiers = ["single_use","hot_storage","cold_storage","mining_pool","mining_solo","faucet","distributor","unknown",undefined]
@@ -35,7 +39,7 @@ function updateBox(node){
     update_aside(node);
     return;
   }
-  var addr = {total_received: node.total_received, classification: node.classification, label: node.label};
+  var addr = {total_received: (node.total_received / 100000.0) + " mBTC", classification: node.classification, label: node.label, balance: (node.balance / 100000.0) + " mBTC", total_sent: (node.total_sent / 100000.0) + " mBTC"};
   var associated = "";
   for (var i = 0; i < group.length; i++){
     associated += group[i];
@@ -73,10 +77,14 @@ function updateGraph(shouldApply, wasClicked, address, filename){
       old.classification = tempNode.classification;
       old.total_received = tempNode.total_received;
       old.color = classifiers.indexOf(old.classification);
+      old.total_sent = tempNode.total_sent;
+      old.balance = tempNode.balance;
+      old.size = Math.log(old.total_received);
     }
     var c = classifiers.indexOf(tempNode.classification)
     console.log('got a color for a node: ' + c + ', with class: ' + tempNode.classification);
-    var newNode = {size: tempNode.size, address: tempNode.address, color: c, id: id, label: tempNode.label, classification: tempNode.classification, total_received: tempNode.total_received};
+    var newNode = {size: tempNode.size, address: tempNode.address, color: c, id: id, label: tempNode.label, classification: tempNode.classification, total_received: tempNode.total_received, total_sent: tempNode.total_sent, balance: tempNode.balance};
+    console.log(newNode);
     id += 1;
     // newNode.size = tempNode.size;
     // newNode.address = tempNode.address;
@@ -125,7 +133,7 @@ function applyGraphUpdates(address){
       if (tempNode.label.length > 0)
       console.log('found a label for ' + tempNode.address);
       // console.log('size for ' + addressMap[tempNode.address].id + ' is going up from ' + addressMap[tempNode.address].size + ' by ' + tempNode.size);
-      addressMap[tempNode.address].size = addressMap[tempNode.address].size + tempNode.size;
+      // addressMap[tempNode.address].size = addressMap[tempNode.address].size + tempNode.size;
       continue;
     }
     addressMap[tempNode.address] = tempNode;
@@ -138,6 +146,8 @@ function applyGraphUpdates(address){
           groupings[tempNode.address] = group
         }
     }
+    console.log("PUSHING");
+    console.log(tempNode);
     nodes.push(tempNode);
   }
 
@@ -163,7 +173,22 @@ function getGrouping(address){
   }
   return null;
 }
-updateGraph(true, false, "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg", "data?type=explore&address=13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg&layers=0&direction=1");
+updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=0&direction=0");
+// updateGraph(true, false, "1GD3Sg3xcAzoc4V2SbkdTkFT9acio65Wr9" , "data?type=explore&address=1GD3Sg3xcAzoc4V2SbkdTkFT9acio65Wr9&layers=0&direction=0")
+// updateGraph(true, false, "16dJhwTJMgzzwydoB1gsYx4zkdrc4Ue8QY" , "data?type=explore&address=16dJhwTJMgzzwydoB1gsYx4zkdrc4Ue8QY&layers=0&direction=0")
+// updateGraph(true, false, "1EruyZfYWniAnw3PiKefTrRafyS4da5SJa" , "data?type=explore&address=1EruyZfYWniAnw3PiKefTrRafyS4da5SJa&layers=0&direction=0")
+// updateGraph(true, false, "1NxMkvbYn8o7kKCWPsnWR4FDvH7L9TJqGG" , "data?type=explore&address=1NxMkvbYn8o7kKCWPsnWR4FDvH7L9TJqGG&layers=0&direction=0")
+// updateGraph(true, false, "1FA57SXagJUq7zhnk5kTQMQmWSE3eBVbMr" , "data?type=explore&address=1FA57SXagJUq7zhnk5kTQMQmWSE3eBVbMr&layers=0&direction=0")
+// updateGraph(true, false, "1MrdjjEhVNoofNMiCbvXEmgrB3K22LxPMd" , "data?type=explore&address=1MrdjjEhVNoofNMiCbvXEmgrB3K22LxPMd&layers=0&direction=0")
+// updateGraph(true, false, "1Lcd4bmrSytyDzHYdz7pyx11vrswcERM5k" , "data?type=explore&address=1Lcd4bmrSytyDzHYdz7pyx11vrswcERM5k&layers=0&direction=0")
+// updateGraph(true, false, "1cypherEucdwyZ8Xn84M8qUscjBXnWGZA" , "data?type=explore&address=1cypherEucdwyZ8Xn84M8qUscjBXnWGZA&layers=0&direction=0")
+// updateGraph(true, false, "1F7XgercyaXeDHiuq31YzrVK5YAhbDkJhf" , "data?type=explore&address=1F7XgercyaXeDHiuq31YzrVK5YAhbDkJhf&layers=0&direction=0")
+// updateGraph(true, false, "15woTu5jrfLRtgSmP5YS1rHEWZrLiDmJgE" , "data?type=explore&address=15woTu5jrfLRtgSmP5YS1rHEWZrLiDmJgE&layers=0&direction=0")
+// updateGraph(true, false, "15B7QYCSh8MqBMA6b1wtt7n6CsrKdpRDC1" , "data?type=explore&address=15B7QYCSh8MqBMA6b1wtt7n6CsrKdpRDC1&layers=0&direction=0")
+// updateGraph(true, false, "1GxKNPRDxT6Wx2EYv5CVz1FWwDDEq6Tmw4" , "data?type=explore&address=1GxKNPRDxT6Wx2EYv5CVz1FWwDDEq6Tmw4&layers=0&direction=0")
+// updateGraph(true, false, "1LkTEGGyMKGgSo71f1sEubwG5PSg691zKb" , "data?type=explore&address=1LkTEGGyMKGgSo71f1sEubwG5PSg691zKb&layers=0&direction=0")
+// updateGraph(true, false, "1H2BTW6FvWyQAiceePHFYeVnHJboiEWCyR" , "data?type=explore&address=1H2BTW6FvWyQAiceePHFYeVnHJboiEWCyR&layers=0&direction=0")
+// updateGraph(true, false, "1HFj8rcMxqDinBdGE4zpGXEMz9Cuqt8iVG" , "data?type=explore&address=1HFj8rcMxqDinBdGE4zpGXEMz9Cuqt8iVG&layers=0&direction=0")
 // setTimeout(function(){applyGraphUpdates("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg")}, 3000);
 
 function updateGroups(address, filename){
@@ -395,7 +420,7 @@ function restart() {
   circle.selectAll('circle')
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
     .style('stroke', function(d) { return d3.rgb(colors(d.color)).darker().toString(); })
-    .attr('r', function(d){ return (d.size / 2) + 8 })
+    .attr('r', function(d){ return d.size })
     .append("title")
         .text(function(d){
           return getLabel(d);
@@ -409,7 +434,7 @@ function restart() {
 
   g.append('svg:circle')
     .attr('class', 'node')
-    .attr('r', function(d){ return (d.size / 2) + 8 })
+    .attr('r', function(d){ return d.size })
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
     .style('stroke', function(d) { return d3.rgb(colors(d.color)).darker().toString(); })
     // .classed('reflexive', function(d) { return d.reflexive; })
@@ -432,7 +457,7 @@ function restart() {
       mousedown_node = d;
       // if(mousedown_node === selected_node) selected_node = null;
       selected_node = mousedown_node;
-      updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=1");
+      updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=0");
       selected_link = null;
 
       // reposition drag line
@@ -574,6 +599,12 @@ function keydown() {
   if(lastKeyDown !== -1) return;
   lastKeyDown = d3.event.keyCode;
 
+  if (d3.event.keyCode == 32){
+    d3.event.preventDefault();
+    window.scrollTo(window.innerWidth * 1.5, window.innerHeight * 1.5);
+    return;
+  }
+
   // ctrl
   if(d3.event.keyCode === 17) {
     circle.call(force.drag);
@@ -582,7 +613,7 @@ function keydown() {
 
   if(!selected_node && !selected_link) return;
   switch(d3.event.keyCode) {
-    case 32:
+    case 73:
       // alert('pressed space');
       //prompt("Copy me!",selected_node.address);
       d3.event.preventDefault(); 

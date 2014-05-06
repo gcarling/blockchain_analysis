@@ -101,20 +101,23 @@ def addrs_to_graph(addresses):
 		node = {}
 		node['address'] = addr.address
 		logging.debug(addr.get_received())
-		node['size'] = 2#math.log(addr.received())
-		logging.debug(addr.label)
+		if (addr.address == "1KrW7wDn4n6pndwikYh2fZtMXDsgaSfqLG"):
+			logging.debug("FOUND IT")
+			logging.debug(addr.classified_as)
 		node['label'] = addr.label
 		node['classification'] = addr.classified_as
 		node['total_received'] = addr.total_received
-		logging.debug("I AM CURRENTLY RUNNING THIS CODE")
+		node['size'] = math.log(addr.total_received)
+		node['total_sent'] = addr.total_sent
+		node['balance'] = addr.balance
 		node_map[addr.address] = at
 		at += 1
 		nodes.append(node)
 	links = []
 	for addr in addresses.itervalues():
-		for sent_to in addr.sends_to:
+		for sent_to in addr.receives_from:
 			if sent_to not in node_map:
-				node = {'address': sent_to, 'size': 1, 'label':""}
+				node = {'address': sent_to, 'size': 8, 'label':""}
 				nodes.append(node)
 				node_map[sent_to] = at
 				at += 1
