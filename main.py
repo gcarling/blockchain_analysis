@@ -97,13 +97,12 @@ class Address:
 			logging.debug(type)
 			for i in t.inputs:
 				if i[0] == self.address:
-					self.balance -= abs(i[1])
+					pass
 				elif type[1]:
 					self.receives_from.add(i[0])
 			for i in t.outputs:
 				if i[0] == self.address:
-					self.balance += abs(i[1])
-					self.total_received += abs(i[1])
+					pass
 				elif type[0]:
 					self.sends_to.add(i[0])
 		
