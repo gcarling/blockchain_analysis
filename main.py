@@ -24,6 +24,7 @@ from google.appengine.ext import db
 import logging
 import time
 import zlib
+import random
 
 # local files
 import classifier
@@ -41,6 +42,9 @@ class CachedRequest(db.Model):
 	data = db.TextProperty()
 
 address_url = "http://blockchain.info/address/%s?format=json"
+
+class TooLargeError(Exception):
+    pass
 
 class Address:
 	def __init__(self,address,tx=None):
@@ -129,23 +133,39 @@ def reverse_spent(val):
 	return "true" if val == "false" else "false"
 
 def check_cache(address):
+	logging.debug("fetching "+address)
 	c = CachedRequest.gql("WHERE address = :1", address).get()
 	if c:
-		while not c.data:
+		while not c.data and not c.data == "":
 			time.sleep(0.5)
 			c = CachedRequest.gql("WHERE address = :1", address).get()
-		#data = zlib.decompress(c.data.encode("utf-8"))
+		#data = zlib.decompress(c.data)
 		data = c.data
 	else:
 		c = CachedRequest()
 		c.address = address
 		c.put()
 		data = urlfetch.fetch(address_url % address).content
-		#c.data = zlib.compress(data.encode("utf-8"))
-		c.data = data
-		c.put()
 
-	data = json.loads(data)
+		#c.data = zlib.compress(data.decode("utf-8"))
+		c.data = data
+		try:
+			c.put()
+		except:
+			logging.debug("address: %s is too big (%d len), removing" % (address, len(c.data)))
+			c.data = ""
+			c.put()
+			raise TooLargeError
+			
+	if data == "":
+		raise TooLargeError
+
+	try:
+		data = json.loads(data)
+	except ValueError:
+		logging.debug("data is: "+str(data)+" "+str(address))
+
+	logging.debug("success fetching.")
 	return data
 
 def get_label(address):
@@ -223,9 +243,14 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 
 	logging.debug(explored)
 
-	root = Address(address)
-	root.fill_tx(direction=direction)
-	root.calc()
+	try:
+		root = Address(address)
+		root.fill_tx(direction=direction)
+		root.calc()
+	except TooLargeError:
+		logging.debug("caught too large, ignoring.")
+		return explored
+
 	explored[address] = root
 
 	log("%s : %d" % (address, layers))
@@ -299,22 +324,31 @@ class TestHandler(webapp2.RequestHandler):
 
 class MassGroupHandler(webapp2.RequestHandler):
 	def get(self):
-		f = open('tags.tsv','r').read().split("\n")
+		self.response.out.write("loading")
+		if self.request.get("set")=="large":
+			f = open('tags.tsv','r').read().split("\n")
+		else:
+			f = open('tags_small.tsv','r').read().split("\n")
+		self.response.out.write("loaded tags")
 		out = {}
 		for g in f:
+			g = g.split("\t")
+			if g[0][0] != "1":
+				continue
 			out[g[0]] = [[],[]]
 			addrs = explore(g[0],max_nodes=10,predicate=follow_entity,direction=0)
-			for a in addrs:
+			for a in addrs.itervalues():
+				logging.debug(a)
 				out[g[0]][0] += list(a.sends_to)
 				out[g[0]][1] += list(a.receives_from)
 
 		ii = {}
 
 		for a,x in out.iteritems():
-			for y in x:
-				if not x in ii:
-					ii[x] = []
-				ii[x].append(a)
+			for y in x[0]: #sends to = 0, =1
+				if not y in ii:
+					ii[y] = []
+				ii[y].append(a)
 
 		for a,x in ii.iteritems():
 			if len(x) > 1:
