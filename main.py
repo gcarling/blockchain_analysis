@@ -46,6 +46,7 @@ class Address:
 	def __init__(self,address,tx=None):
 		self.address = address
 		self.total_received = None
+		self.total_sent = None
 		self.balance = None
 		self.tx = tx
 
@@ -82,9 +83,13 @@ class Address:
 		if self.tx == None:
 			if self.fill_tx() == -1:
 				return -1
+
+		data = check_cache(address)
+
 		self.label = get_label(self.address)
-		self.balance = get_balance(self.address)
-		self.total_received = get_total_received(self.address)
+		self.balance = data["final_balance"]
+		self.total_received = data["total_received"]
+		self.total_sent = data["total_sent"]
 		for t in self.tx:
 			type = (reduce((lambda a,b:a or b[0]==self.address),t.inputs,False),
 						reduce((lambda a,b:a or b[0]==self.address),t.outputs, False))
@@ -154,14 +159,6 @@ def get_label(address):
 					return o["addr_tag"]
 
 	return ""
-
-def get_total_received(address):
-	data = check_cache(address)
-	return data["total_received"]
-
-def get_balance(address):
-	data = check_cache(address)
-	return data["final_balance"]
 
 def get_tx_list(address):
 	# check cache
