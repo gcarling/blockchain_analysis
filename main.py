@@ -84,7 +84,7 @@ class Address:
 			if self.fill_tx() == -1:
 				return -1
 
-		data = check_cache(address)
+		data = check_cache(self.address)
 
 		self.label = get_label(self.address)
 		self.balance = data["final_balance"]
