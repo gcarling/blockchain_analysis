@@ -64,27 +64,6 @@ class Address:
 
 		if self.tx == None:
 			self.tx = get_tx_list(self.address)
-
-			for tx in self.tx:
-
-				# (is_sender, is_receiver)
-				tx_type = (reduce((lambda a,b:a or b[0]==self.address),tx.inputs,False),
-							reduce((lambda a,b:a or b[0]==self.address),tx.outputs, False))
-
-				fine = False
-				if direction == 0:
-					fine = True
-				if direction == 1: #no backwards, want tx with ourselves as sender
-					for o in tx.inputs:
-						if o[0] == self.address:
-							fine = True
-				elif direction == 2: #no forwards, want tx with ourselves as receiver
-					for o in tx.outputs:
-						if o[0] == self.address:
-							fine = True
-				if fine == False:
-					self.tx.remove(tx)
-
 			self.status = 2
 	
 	def get_balance(self):
@@ -98,14 +77,14 @@ class Address:
 			if self.calc() == -1:
 				return -1
 		return self.total_received
-		
+
 	def calc(self):
 		if self.tx == None:
 			if self.fill_tx() == -1:
 				return -1
 		self.label = get_label(self.address)
-		self.balance = 0
-		self.total_received = 0
+		self.balance = get_balance(self.address)
+		self.total_received = get_total_received(self.address)
 		for t in self.tx:
 			type = (reduce((lambda a,b:a or b[0]==self.address),t.inputs,False),
 						reduce((lambda a,b:a or b[0]==self.address),t.outputs, False))
@@ -175,6 +154,14 @@ def get_label(address):
 					return o["addr_tag"]
 
 	return ""
+
+def get_total_received(address):
+	data = check_cache(address)
+	return data["total_received"]
+
+def get_balance(address):
+	data = check_cache(address)
+	return data["final_balance"]
 
 def get_tx_list(address):
 	# check cache
