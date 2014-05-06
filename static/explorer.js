@@ -10,6 +10,8 @@ var svg = d3.select('body')
   .attr('width', width)
   .attr('height', height);
 
+startNode = null;
+
 var nodes = []
 var links = []
 // var lastNodeId
@@ -148,6 +150,9 @@ function applyGraphUpdates(address){
     }
     console.log("PUSHING");
     console.log(tempNode);
+    if (!startNode){
+      startNode = tempNode;
+    }
     nodes.push(tempNode);
   }
 
@@ -601,7 +606,16 @@ function keydown() {
 
   if (d3.event.keyCode == 32){
     d3.event.preventDefault();
-    window.scrollTo(window.innerWidth * 1.5, window.innerHeight * 1.5);
+    var x, y;
+    if (!selected_node){
+      x = startNode.x;
+      y = startNode.y;
+    }
+    else{
+      x = selected_node.x;
+      y = selected_node.y;
+    }
+    window.scrollTo(x - window.innerWidth / 2, y - window.innerHeight / 2);
     return;
   }
 
@@ -612,9 +626,10 @@ function keydown() {
   }
 
   if(!selected_node && !selected_link) return;
+
   switch(d3.event.keyCode) {
-    case 73:
-      // alert('pressed space');
+    case 73: // I
+      alert('pressed i');
       //prompt("Copy me!",selected_node.address);
       d3.event.preventDefault(); 
       window.open("https://blockchain.info/address/"+selected_node.address);
