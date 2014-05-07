@@ -18,10 +18,16 @@ var links = []
 var currentColor = 0;
 var id = 0;
 
-var start_point = "1Aaykbf4iJ8d4UTh2LCjNGZyicqkFresdp"
+var start_point = "1MfqytVkmEE67URYHRtkR3TpPEqxBorzMA";//"1DirtycatzdoC8u8DaMsVjWFfYvyzawCGe";
+var start_layers = 0;
+var layer_field = document.getElementById("layer_field");
+layer_field.value = "" + start_layers;
 
 //classification finder
-var classifiers = ["single_use","hot_storage","cold_storage","mining_pool","mining_solo","faucet","distributor","unknown",undefined]
+var classifiers = ["cold_storage","hot_storage","single_use","mining_pool","mining_solo","faucet","distributor","unknown",undefined]
+for (var i = 0; i < classifiers.length; i++){
+  colors(i);
+}
 //maps string address to node object
 var addressMap = {}
 //maps string address to list of string addresses we believe are the same entity
@@ -30,6 +36,8 @@ var groupings = {}
 var expand_requests = {}
 var applied_expands = {}
 var group_requests = {}
+//keep track of in progress requests so we don't get overlaps
+var working = {}
 // set up initial nodes and links
 //  - nodes are known by 'id', not by index in array.
 //  - reflexive edges are indicated on the node (as a bold black circle).
@@ -41,6 +49,7 @@ function updateBox(node){
     update_aside(node);
     return;
   }
+  // var addr = {total_received: node.total_received, classification: node.classification, label: node.label, balance: node.balance, total_sent: node.total_sent};
   var addr = {total_received: (node.total_received / 100000.0) + " mBTC", classification: node.classification, label: node.label, balance: (node.balance / 100000.0) + " mBTC", total_sent: (node.total_sent / 100000.0) + " mBTC"};
   var associated = "";
   for (var i = 0; i < group.length; i++){
@@ -53,7 +62,12 @@ function updateBox(node){
   update_aside(addr);
 }
 
+
 function updateGraph(shouldApply, wasClicked, address, filename){
+  if (working[address] === true){
+    return;
+  }
+  working[address] = true;
   if (address in expand_requests){
     if (shouldApply){
       applyGraphUpdates(address);
@@ -61,11 +75,13 @@ function updateGraph(shouldApply, wasClicked, address, filename){
     if (wasClicked){
       updateBox(addressMap[address]);
     }
+    working[address] = false;
     return;
   }
   d3.json(filename, function(error, graph) {
+      console.log("original update");
     console.log(graph.nodes);
-    // console.log(graph.links);
+    console.log(graph.links);
   var offset = nodes.length;  
   // nodes = graph.nodes;
   // links = graph.links;
@@ -73,24 +89,39 @@ function updateGraph(shouldApply, wasClicked, address, filename){
   var newNodes = []
   for (var i = 0; i < graph.nodes.length; i++){
     var tempNode = graph.nodes[i];
+    // if (tempNode.address === "1JAr2nGY3vjJhoqXXdSNqmvprnqynW8urS"){
+    //     console.log("working with the temp node");
+    //     console.log(tempNode);
+    //   }
     if (tempNode.address in addressMap){
-      var old = addressMap[address]
-      old.label = tempNode.label;
-      old.classification = tempNode.classification;
-      old.total_received = tempNode.total_received;
-      old.color = classifiers.indexOf(old.classification);
-      old.total_sent = tempNode.total_sent;
-      old.balance = tempNode.balance;
-      old.size = Math.log(old.total_received);
+      if (tempNode.total_received !== undefined){
+        var old = addressMap[tempNode.address]
+        old.label = tempNode.label;
+        old.classification = tempNode.classification;
+        old.total_received = tempNode.total_received;
+        old.color = classifiers.indexOf(old.classification);
+        old.total_sent = tempNode.total_sent;
+        old.balance = tempNode.balance;
+        old.size = Math.log(old.total_received);
+      }
+      // if (tempNode.address === "1JAr2nGY3vjJhoqXXdSNqmvprnqynW8urS"){
+      //   console.log("this is the new (updated) node");
+      //   console.log(old);
+      // }
+      // continue;
     }
     var c = classifiers.indexOf(tempNode.classification)
-    console.log('got a color for a node: ' + c + ', with class: ' + tempNode.classification);
+    // console.log('got a color for a node: ' + c + ', with class: ' + tempNode.classification);
     var newNode = {size: tempNode.size, address: tempNode.address, color: c, id: id, label: tempNode.label, classification: tempNode.classification, total_received: tempNode.total_received, total_sent: tempNode.total_sent, balance: tempNode.balance};
-    console.log(newNode);
+    // console.log(newNode);
     id += 1;
     // newNode.size = tempNode.size;
     // newNode.address = tempNode.address;
     // console.log(tempNode.label);
+    // if (tempNode.address === "1JAr2nGY3vjJhoqXXdSNqmvprnqynW8urS"){
+    //   console.log("this is the new node");
+    //   console.log(newNode);
+    // }
     newNodes.push(newNode);
   }
   // console.log("")
@@ -115,20 +146,24 @@ function updateGraph(shouldApply, wasClicked, address, filename){
   if (wasClicked){
       updateBox(addressMap[address]);
   }
+  working[address] = false;
   });
 }
 
 function applyGraphUpdates(address){
+  console.log("APPLYING");
   if (address in applied_expands){
     return;
   }
   applied_expands[address] = 1;
-  console.log(expand_requests);
+  // console.log(expand_requests);
   // while(expand_requests[address] === undefined){
 
   // }
   var newNodes = expand_requests[address][0]
   var newLinks = expand_requests[address][1]
+  console.log(newNodes);
+  console.log(newLinks);
   for (var i = 0; i < newNodes.length; i++){
     var tempNode = newNodes[i];
     if(tempNode.address in addressMap){
@@ -148,8 +183,8 @@ function applyGraphUpdates(address){
           groupings[tempNode.address] = group
         }
     }
-    console.log("PUSHING");
-    console.log(tempNode);
+    // console.log("PUSHING");
+    // console.log(tempNode);
     if (!startNode){
       startNode = tempNode;
     }
@@ -178,7 +213,7 @@ function getGrouping(address){
   }
   return null;
 }
-updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=0&direction=0");
+updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=0");
 // updateGraph(true, false, "1GD3Sg3xcAzoc4V2SbkdTkFT9acio65Wr9" , "data?type=explore&address=1GD3Sg3xcAzoc4V2SbkdTkFT9acio65Wr9&layers=0&direction=0")
 // updateGraph(true, false, "16dJhwTJMgzzwydoB1gsYx4zkdrc4Ue8QY" , "data?type=explore&address=16dJhwTJMgzzwydoB1gsYx4zkdrc4Ue8QY&layers=0&direction=0")
 // updateGraph(true, false, "1EruyZfYWniAnw3PiKefTrRafyS4da5SJa" , "data?type=explore&address=1EruyZfYWniAnw3PiKefTrRafyS4da5SJa&layers=0&direction=0")
@@ -378,7 +413,7 @@ function getLabel(d){
 
 // update graph (called when needed)
 function restart() {
-  // console.log(nodes);
+  // console.log("restarting!");
   // path (link) group
   path = path.data(links);
 
@@ -421,6 +456,8 @@ function restart() {
   // NB: the function arg is crucial here! nodes are known by id, not by index!
   circle = circle.data(nodes, function(d) { return d.address; });
 
+  // console.log(nodes);
+
   // update existing nodes (reflexive & selected visual states)
   circle.selectAll('circle')
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
@@ -462,7 +499,12 @@ function restart() {
       mousedown_node = d;
       // if(mousedown_node === selected_node) selected_node = null;
       selected_node = mousedown_node;
-      updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=0");
+      if (selected_node.balance === undefined){
+        updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=0");
+      }
+      else{
+        updateBox(selected_node);
+      }
       selected_link = null;
 
       // reposition drag line
@@ -603,7 +645,6 @@ function keydown() {
 
   if(lastKeyDown !== -1) return;
   lastKeyDown = d3.event.keyCode;
-
   if (d3.event.keyCode == 32){
     d3.event.preventDefault();
     var x, y;
@@ -619,6 +660,20 @@ function keydown() {
     return;
   }
 
+  if (d3.event.keyCode == 65){
+      var newAddr = prompt("Enter a new address:");
+      if (newAddr !== ""){
+        if (newAddr in addressMap){
+          alert("ALREADY EXISTS");
+        }
+        else{
+          var json = "data?type=explore&address=" + newAddr + "&layers=0&direction=1";
+          updateGraph(true, false, newAddr, json);
+        }
+      }
+      return;
+    }
+
   // ctrl
   if(d3.event.keyCode === 17) {
     circle.call(force.drag);
@@ -629,7 +684,6 @@ function keydown() {
 
   switch(d3.event.keyCode) {
     case 73: // I
-      alert('pressed i');
       //prompt("Copy me!",selected_node.address);
       d3.event.preventDefault(); 
       window.open("https://blockchain.info/address/"+selected_node.address);
@@ -649,14 +703,16 @@ function keydown() {
     case 69: //E
       d3.event.preventDefault();
       var addr = selected_node.address;
-      var json = "data?type=explore&address=" + addr + "&layers=0&direction=1";
+      alert(layer_field.value);
+      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=0";
+      alert(json);
       updateGraph(true, false, addr, json);
-      applyGraphUpdates(addr);
+      // applyGraphUpdates(addr);
       break;
     case 71: //G
       d3.event.preventDefault();
       var addr = selected_node.address;
-      var json = "data?type=entity&address=" + addr + "&max_nodes=10&direction=0"
+      var json = "data?type=entity&address=" + addr + "&layers=" + layer_field.value + "&direction=0"
       updateGroups(addr, json);
       break;
     // case 66: // B
