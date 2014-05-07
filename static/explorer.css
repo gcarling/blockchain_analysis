@@ -65,9 +65,9 @@ aside {
   left:10px;
   border:1px solid #ccc;
   padding:10px;
-  background-color:#fdfdfd;
-  opacity:0.9;
-  text-shadow:;
+  background-color:#F5F9FA;
+  opacity:0.95;
+  /*width:350px;*/
 }
 
 .color_list {
@@ -83,8 +83,11 @@ ul li:nth-child(2n) {
   margin-top:-25px;
 }
 .color_label{
-  font-size:20px;
-  width:40px;
+  font-size: 20px;
+width: 40px;
+position: relative;
+top: 3px;
+text-shadow: 1px 1px #000;
 }
 .hidden_element{
   fill: #000000;

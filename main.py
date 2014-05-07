@@ -208,6 +208,14 @@ def get_tx_list(address):
 
 	return txs
 
+def transmit_more_than(root,address,amount):
+	total = 0
+	for tx in root.tx:
+		for o in tx.outputs+tx.inputs:
+			if o[0] == address:
+				total += abs(o[1])
+	return total > amount
+
 def follow_entity(root,address):
 	"""
 	only accept nodes with a single outgoing tx, and take the address with the non-round number
@@ -259,7 +267,7 @@ def is_less_round(num,list_of_num):
 	order.reverse()
 	return order[0] == num and percent_not_zeros(str(num)+"0") > percent_not_zeros(str(order[1]))
 
-def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:True),explored=0):
+def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:True),mbtc_threshold=0.1,max_connections=10,explored=0):
 	"""
 		returns list of addresses visited, each with addr.tx
 
@@ -276,10 +284,6 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 		root = Address(address)
 		root.fill_tx(direction=direction)
 		root.calc()
-		logging.debug("findme2")
-		logging.debug(direction)
-		logging.debug(root.sends_to)
-		logging.debug(root.receives_from)
 	except TooLargeError:
 		logging.debug("caught too large, ignoring.")
 		return explored
@@ -300,9 +304,10 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 			logging.debug("bad! direction is: %s" % str(direction))
 			comb = []
 	
-		for x in comb:
-			if predicate(root,x):
-				explore(x,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored)
+		if len(comb) <= max_connections:
+			for x in comb:
+				if predicate(root,x) and transmit_more_than(root,x,mbtc_threshold*100000):
+					explore(x,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored)
 
 	return explored	
 
@@ -313,17 +318,28 @@ class MainHandler(webapp2.RequestHandler):
 class DataHandler(webapp2.RequestHandler):
     def get(self):
 		try:
-			if self.request.get("layers") != None:
-				num_layers = int(self.request.get("layers"))
-			else:
-				num_layers = 0
+			
+			num_layers = int(self.request.get("layers")) or 0
 
 			if self.request.get("type") == "entity":
 				predicate = follow_entity
 			else:
 				predicate = (lambda a,b:True)
+
 			direction = (int(self.request.get("direction")) or 0)
-			res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",layers=(num_layers),predicate=predicate,direction=direction)
+
+			logging.debug(self.request.get("max_connections"))
+			logging.debug(self.request.get("mbtc_threshold"))
+			if self.request.get("max_connections") not in [None,""]:
+				max_connections = int(self.request.get("max_connections"))
+			else:
+				max_connections = 100
+			if self.request.get("mbtc_threshold") not in [None,""]:
+				mbtc_threshold = int(self.request.get("mbtc_threshold"))
+			else:
+				mbtc_threshold = 0.1
+
+			res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",max_connections=max_connections,mbtc_threshold=mbtc_threshold,layers=num_layers,predicate=predicate,direction=direction)
 
 		except ValueError:
 			return self.response.out.write("Error: bad arguments")
