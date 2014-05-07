@@ -141,7 +141,8 @@ def check_cache(address):
 		while not c.data and not c.data == "":
 			logging.debug("sleeping")
 			time.sleep(0.5)
-			c = CachedRequest.gql("WHERE address = :1", address).get()
+			c = CachedRequest.all(keys_only=True).filter('address',address)
+			c = db.get(list(c))[0]
 		#data = zlib.decompress(c.data)
 		data = c.data
 	else:
