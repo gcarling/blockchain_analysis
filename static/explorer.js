@@ -60,6 +60,11 @@ function changeNodeStatus(node, hide){
 }
 
 function changeClassStatus(class_name, hide){
+  console.log(class_name);
+  console.log(hide);
+  if (class_name === "unexplored"){
+    class_name = undefined;
+  }
   class_statuses[class_name] = hide;
   restart();
 }
@@ -457,7 +462,10 @@ function restart() {
 
   // update existing links
   path.classed('selected', function(d) { return d === selected_link; });
-  path.classed('hidden_element', function(d) { return shouldLinkHide(d)});
+  path.classed('hidden_element', function(d) { 
+    var hide = shouldLinkHide(d);
+    return hide;
+  });
     // .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
     // .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; });
 
@@ -494,7 +502,10 @@ function restart() {
   circle.selectAll('circle')
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
     .style('stroke', function(d) { return d3.rgb(colors(d.color)).darker().toString(); })
-    .classed('hidden_element', function(d) { return shouldNodeHide(d)})
+    .classed('hidden_element', function(d) { 
+      var hide = shouldNodeHide(d);
+      return hide;
+    })
     .attr('r', function(d){ return d.size })
     .append("title")
         .text(function(d){

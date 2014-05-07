@@ -87,5 +87,6 @@ ul li:nth-child(2n) {
   width:40px;
 }
 .hidden_element{
-  display: none;
+  fill: #000000;
+  opacity: 0;
 }
