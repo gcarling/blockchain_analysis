@@ -309,7 +309,7 @@ class DataHandler(webapp2.RequestHandler):
     def get(self):
 		try:
 			if self.request.get("layers") != None:
-				num_layers = self.request.get("layers")
+				num_layers = int(self.request.get("layers"))
 			else:
 				num_layers = 0
 
