@@ -93,7 +93,7 @@ def transactions_to_graph(transactions):
 	return json.dumps(graph, separators=(',',': '))
 
 
-def addrs_to_graph(addresses):
+def addrs_to_graph(addresses, direction):
 	at = 0
 	node_map = {}
 	nodes = []
@@ -101,9 +101,6 @@ def addrs_to_graph(addresses):
 		node = {}
 		node['address'] = addr.address
 		logging.debug(addr.get_received())
-		if (addr.address == "1KrW7wDn4n6pndwikYh2fZtMXDsgaSfqLG"):
-			logging.debug("FOUND IT")
-			logging.debug(addr.classified_as)
 		node['label'] = addr.label
 		node['classification'] = addr.classified_as
 		node['total_received'] = addr.total_received
@@ -115,15 +112,21 @@ def addrs_to_graph(addresses):
 		nodes.append(node)
 	links = []
 	for addr in addresses.itervalues():
-		for sent_to in addr.receives_from:
-			if sent_to not in node_map:
-				node = {'address': sent_to, 'size': 8, 'label':""}
+		if (direction == 1):
+			to_explore = addr.sends_to
+		elif (direction == 2):
+			to_explore = addr.receives_from
+		else:
+			to_explore = addr.sends_to
+		for connect in to_explore:
+			if connect not in node_map:
+				node = {'address': connect, 'size': 8, 'label':""}
 				nodes.append(node)
-				node_map[sent_to] = at
+				node_map[connect] = at
 				at += 1
 			link = {}
 			sender = node_map[addr.address]
-			target = node_map[sent_to]
+			target = node_map[connect]
 			link['source'] = sender
 			link['target'] = target
 			links.append(link)

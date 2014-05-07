@@ -34,7 +34,7 @@
                               ['su',"Single Use","#2ca02c"],
                               ['mp',"Mining Pool","#d62728"],
                               ['ms',"Mining Solo","#9467bd"],
-                              ['ft',"Faucet","#8c564b"],
+                              ['ft',"Faucet","#17becf"],
                               ['ds',"Distributor","#e377c2"],
                               ['ux',"Unexplored","#bcbd22"]];
 
@@ -84,7 +84,7 @@
       <div class="color_list" ng-repeat="x in color_labels">
         <li>
           <input type="checkbox" ng-checked="selection.indexOf(x[0]) > -1" ng-click="toggleSelection(x[0]);">
-            <span style="color:{[{x[2]}]};font-weight:bold;">{[{x[1]}]}</span>
+            <span style="color:{[{x[2]}]};">{[{x[1]}]}</span>
           </input>
         </li>
       </div>
