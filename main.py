@@ -195,12 +195,25 @@ def get_tx_list(address):
 	return txs
 
 def follow_entity(root,address):
-	#only accept nodes with a single outgoing tx, and take the address with the non-round number
-	logging.debug(root.address)
-	logging.debug(root.sends_to)
-	logging.debug(address)
+	"""
+	only accept nodes with a single outgoing tx, and take the address with the non-round number
+	in addition, group all addresses that send in a shared transaction if one of the outputs is the same as one of the inputs
+	"""
+	for tx in root.tx:
+		same = False
+		for o in tx.outputs:
+			for i in tx.inputs:
+				if o[0] == i[0]:
+					same = True
+		if same == True:
+			# all the inputs should be grouped
+			for i in tx.inputs:
+				if i[0] == address:
+					return True
+
 	if len(root.sends_to) != 2:
 		return False
+		
 	amount = -1
 	for tx in root.tx:
 		for o in tx.outputs:
@@ -226,7 +239,7 @@ def more_round(num,list_of_num):
 	# return if that number has a higher percentage of zeros than the other numbers
 	return sorted(list_of_num+[num], key=lambda a:len(str(a).rstrip('0'))*1.0/len(str(a)))[0] == num
 
-def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:True),explored=0,log=(lambda a:0)):
+def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:True),explored=0):
 	"""
 		returns list of addresses visited, each with addr.tx
 
@@ -236,10 +249,6 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 			2: go backwards only
 	"""
 	if explored==0: explored = {}
-
-	log = (lambda a:0)
-
-	log(str(direction))
 
 	logging.debug(explored)
 
@@ -253,25 +262,19 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 
 	explored[address] = root
 
-	log("%s : %d" % (address, layers))
-	#log(str(root.sends_to))
-	#log(str(root.receives_from))
-
 	if (max_nodes == None and layers == 0) or (max_nodes != None and len(explored) >= max_nodes):
-		log("exiting with max_nodes: %s and layers: %d and len(explored): %d" % (str(max_nodes), layers, len(explored)))
-		logging.debug(explored)
+		logging.debug("exiting with max_nodes: %s and layers: %d and len(explored): %d" % (str(max_nodes), layers, len(explored)))
 		return explored
 	elif direction == 0 or direction == 1:
 		for out in root.sends_to:
 			if out not in explored and predicate(root,out) and not (max_nodes != None and len(explored) >= max_nodes):
-				explore(out,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored,log=log)
+				explore(out,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored)
 	elif direction == 0 or direction == 2:
 		for inp in root.receives_from:
 			if inp not in explored and predicate(root,inp) and not (max_nodes != None and len(explored) >= max_nodes):
-				explore(inp,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored,log=log)
+				explore(inp,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored)
 	else:
-		log("bad! direction is: %s" % str(direction))
-
+		logging.debug("bad! direction is: %s" % str(direction))
 
 	return explored	
 
@@ -282,20 +285,18 @@ class MainHandler(webapp2.RequestHandler):
 class DataHandler(webapp2.RequestHandler):
     def get(self):
 		try:
-			if self.request.get("type") == "entity":
-				res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",log=(lambda a:self.response.out.write(a+"<br/>")),max_nodes=(int(self.request.get("max_nodes")) or 10),predicate=follow_entity,direction=(int(self.request.get("direction")) or 0))
-			else:
-				if self.request.get("layers") != None:
+			if self.request.get("layers") != None:
 					num_layers = int(self.request.get("layers"))
 				else:
-					num_layers = 2
-				res = explore(self.request.get("address") or "13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg",log=(lambda a:self.response.out.write(a+"<br/>")),layers=(num_layers),direction=(int(self.request.get("direction")) or 0),explored={})
+					num_layers = 0
+			if self.request.get("type") == "entity":
+				predicate = follow_entity
+			else:
+				predicate = (lambda a,b:True)
+			res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",layers=(num_layers),predicate=predicate,direction=(int(self.request.get("direction")) or 0))
+
 		except ValueError:
 			return self.response.out.write("Error: bad arguments")
-
-		#for addr in res.itervalues():
-		#	for tx in addr.tx:
-		#		transactions.append(tx)
 
 		if self.request.get("type") == "entity":
 			self.response.out.write(format.format_entity(res))
