@@ -78,9 +78,14 @@
   			<span> {[{line[0]}]}: {[{line[1]}]} </span>
   		</div>
       <br>
-      <span>Enter number of layers for iteration:</span>
-      <input type="text" id="layer_field"/>
-
+      <span>Enter number of layers for iteration:</span><br>
+      <input type="text" placeholder=""id="layer_field"/>
+      <br>
+      <span>Upper limit on connections for expansion:</span><br>
+      <input type="text" id="connection_field"/>
+      <br>
+      <span>Lower limit on tx value for expansion (mBTC):</span><br>
+      <input type="text" id="value_field"/>
       <ul class="color_list">
         <li ng-repeat="x in color_labels">
           <input type="checkbox" ng-checked="selection.indexOf(x[0]) > -1" ng-click="toggleSelection(x[0]);">

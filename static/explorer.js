@@ -3,8 +3,6 @@ var width  = window.innerWidth * 4,
     height = window.innerHeight * 4,
     colors = d3.scale.category10();
 
-window.scrollTo(window.innerWidth * 2, window.innerHeight * 2);
-
 var svg = d3.select('body')
   .append('svg')
   .attr('width', width)
@@ -18,10 +16,18 @@ var links = []
 var currentColor = 0;
 var id = 0;
 
+//auto update location only first time
+var first = true;
 var start_point = "1MfqytVkmEE67URYHRtkR3TpPEqxBorzMA";//"1DirtycatzdoC8u8DaMsVjWFfYvyzawCGe";
 var start_layers = 0;
+var start_connects = 10;
+var start_value = .1;
 var layer_field = document.getElementById("layer_field");
 layer_field.value = "" + start_layers;
+var connection_field = document.getElementById("connection_field");
+connection_field.value = "" + start_connects;
+var value_field = document.getElementById("value_field");
+value_field.value = start_value;
 
 //classification finder
 var classifiers = ["cold_storage","hot_storage","single_use","mining_pool","mining_solo",null,"distributor","unknown",undefined,"faucet"]
@@ -43,6 +49,12 @@ var node_statuses = {}
 var class_statuses = {}
 for (var i = 0; i < classifiers.length; i++){
   class_statuses[classifiers[i]] = false;
+}
+
+//for scrolling
+function scroll(node){
+  console.log("scrolling to " + node.x + "," + node.y);  
+  window.scrollTo(node.x - window.innerWidth / 2, node.y - window.innerHeight / 2);
 }
 
 //returns true if a node should be hidden, false otherwise
@@ -109,14 +121,13 @@ function updateGraph(shouldApply, wasClicked, address, json){
   //   return;
   // }
   d3.json(json, function(error, graph) {
-      console.log("original update");
     console.log(graph.nodes);
     console.log(graph.links);
   var offset = nodes.length;  
   // nodes = graph.nodes;
   // links = graph.links;
   // lastNodeId = graph.nodes.length;
-  var newNodes = []
+  var newNodes = [];
   for (var i = 0; i < graph.nodes.length; i++){
     var tempNode = graph.nodes[i];
     // if (tempNode.address === "1JAr2nGY3vjJhoqXXdSNqmvprnqynW8urS"){
@@ -237,6 +248,10 @@ function applyGraphUpdates(address){
   console.log(nodes);
   console.log(links);
   restart();
+  if (first){
+    window.setTimeout(function(){scroll(addressMap[address])}, 1000);
+    first = false;
+  }
 }
 
 function getGrouping(address){
@@ -248,22 +263,8 @@ function getGrouping(address){
   }
   return null;
 }
-updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=1");
-// updateGraph(true, false, "1GD3Sg3xcAzoc4V2SbkdTkFT9acio65Wr9" , "data?type=explore&address=1GD3Sg3xcAzoc4V2SbkdTkFT9acio65Wr9&layers=0&direction=0")
-// updateGraph(true, false, "16dJhwTJMgzzwydoB1gsYx4zkdrc4Ue8QY" , "data?type=explore&address=16dJhwTJMgzzwydoB1gsYx4zkdrc4Ue8QY&layers=0&direction=0")
-// updateGraph(true, false, "1EruyZfYWniAnw3PiKefTrRafyS4da5SJa" , "data?type=explore&address=1EruyZfYWniAnw3PiKefTrRafyS4da5SJa&layers=0&direction=0")
-// updateGraph(true, false, "1NxMkvbYn8o7kKCWPsnWR4FDvH7L9TJqGG" , "data?type=explore&address=1NxMkvbYn8o7kKCWPsnWR4FDvH7L9TJqGG&layers=0&direction=0")
-// updateGraph(true, false, "1FA57SXagJUq7zhnk5kTQMQmWSE3eBVbMr" , "data?type=explore&address=1FA57SXagJUq7zhnk5kTQMQmWSE3eBVbMr&layers=0&direction=0")
-// updateGraph(true, false, "1MrdjjEhVNoofNMiCbvXEmgrB3K22LxPMd" , "data?type=explore&address=1MrdjjEhVNoofNMiCbvXEmgrB3K22LxPMd&layers=0&direction=0")
-// updateGraph(true, false, "1Lcd4bmrSytyDzHYdz7pyx11vrswcERM5k" , "data?type=explore&address=1Lcd4bmrSytyDzHYdz7pyx11vrswcERM5k&layers=0&direction=0")
-// updateGraph(true, false, "1cypherEucdwyZ8Xn84M8qUscjBXnWGZA" , "data?type=explore&address=1cypherEucdwyZ8Xn84M8qUscjBXnWGZA&layers=0&direction=0")
-// updateGraph(true, false, "1F7XgercyaXeDHiuq31YzrVK5YAhbDkJhf" , "data?type=explore&address=1F7XgercyaXeDHiuq31YzrVK5YAhbDkJhf&layers=0&direction=0")
-// updateGraph(true, false, "15woTu5jrfLRtgSmP5YS1rHEWZrLiDmJgE" , "data?type=explore&address=15woTu5jrfLRtgSmP5YS1rHEWZrLiDmJgE&layers=0&direction=0")
-// updateGraph(true, false, "15B7QYCSh8MqBMA6b1wtt7n6CsrKdpRDC1" , "data?type=explore&address=15B7QYCSh8MqBMA6b1wtt7n6CsrKdpRDC1&layers=0&direction=0")
-// updateGraph(true, false, "1GxKNPRDxT6Wx2EYv5CVz1FWwDDEq6Tmw4" , "data?type=explore&address=1GxKNPRDxT6Wx2EYv5CVz1FWwDDEq6Tmw4&layers=0&direction=0")
-// updateGraph(true, false, "1LkTEGGyMKGgSo71f1sEubwG5PSg691zKb" , "data?type=explore&address=1LkTEGGyMKGgSo71f1sEubwG5PSg691zKb&layers=0&direction=0")
-// updateGraph(true, false, "1H2BTW6FvWyQAiceePHFYeVnHJboiEWCyR" , "data?type=explore&address=1H2BTW6FvWyQAiceePHFYeVnHJboiEWCyR&layers=0&direction=0")
-// updateGraph(true, false, "1HFj8rcMxqDinBdGE4zpGXEMz9Cuqt8iVG" , "data?type=explore&address=1HFj8rcMxqDinBdGE4zpGXEMz9Cuqt8iVG&layers=0&direction=0")
+updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=1&max_connections=" + start_connects + "&mbtc_threshold=" + start_value);
+      // updateGroups(addr, json));
 // setTimeout(function(){applyGraphUpdates("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg")}, 3000);
 
 function updateGroups(address, json){
@@ -300,7 +301,7 @@ function updateGroups(address, json){
         var oldNode = addressMap[addr]
         //update map
         addressMap[addr] = node;
-        node.size += oldNode.size;
+        // node.size += oldNode.size;
         //update links
         for (var j = 0; j < links.length; j++){
           var link = links[j];
@@ -695,16 +696,12 @@ function keydown() {
   lastKeyDown = d3.event.keyCode;
   if (d3.event.keyCode == 32){
     d3.event.preventDefault();
-    var x, y;
     if (!selected_node){
-      x = startNode.x;
-      y = startNode.y;
+      scroll(startNode);
     }
     else{
-      x = selected_node.x;
-      y = selected_node.y;
+      scroll(selected_node);max
     }
-    window.scrollTo(x - window.innerWidth / 2, y - window.innerHeight / 2);
     return;
   }
 
@@ -755,7 +752,7 @@ function keydown() {
       d3.event.preventDefault();
       var addr = selected_node.address;
       // alert(layer_fie  ld.value);
-      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=1";
+      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=1&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
       // alert(json);
       updateGraph(true, false, addr, json);
       // applyGraphUpdates(addr);
@@ -764,7 +761,7 @@ function keydown() {
       d3.event.preventDefault();
       var addr = selected_node.address;
       // alert(layer_fie  ld.value);
-      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=2";
+      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=2&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
       // alert(json);
       updateGraph(true, false, addr, json);
       // applyGraphUpdates(addr);
@@ -772,7 +769,7 @@ function keydown() {
     case 71: //G
       d3.event.preventDefault();
       var addr = selected_node.address;
-      var json = "data?type=entity&address=" + addr + "&layers=" + layer_field.value + "&direction=0"
+      var json = "data?type=entity&address=" + addr + "&layers=" + layer_field.value + "&direction=0&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
       updateGroups(addr, json);
       break;
     // case 66: // B
