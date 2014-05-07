@@ -24,7 +24,7 @@ var layer_field = document.getElementById("layer_field");
 layer_field.value = "" + start_layers;
 
 //classification finder
-var classifiers = ["cold_storage","hot_storage","single_use","mining_pool","mining_solo","faucet","distributor","unknown",undefined]
+var classifiers = ["cold_storage","hot_storage","single_use","mining_pool","mining_solo",null,"distributor","unknown",undefined,"faucet"]
 for (var i = 0; i < classifiers.length; i++){
   colors(i);
 }
@@ -38,6 +38,31 @@ var applied_expands = {}
 var group_requests = {}
 //keep track of in progress requests so we don't get overlaps
 var working = {}
+//keep track of shown / hidden by node and by classification
+var node_statuses = {}
+var class_statuses = {}
+for (var i = 0; i < classifiers.length; i++){
+  class_statuses[classifiers[i]] = false;
+}
+
+//returns true if a node should be hidden, false otherwise
+function shouldNodeHide(node){
+  return node_statuses[node.address] || class_statuses[node.classification];
+}
+
+function shouldLinkHide(link){
+  return shouldNodeHide(link.source) || shouldNodeHide(link.target);
+}
+
+function changeNodeStatus(node, hide){
+  node_statuses[node.address] = hide;
+  restart();
+}
+
+function changeClassStatus(class_name, hide){
+  class_statuses[class_name] = hide;
+  restart();
+}
 // set up initial nodes and links
 //  - nodes are known by 'id', not by index in array.
 //  - reflexive edges are indicated on the node (as a bold black circle).
@@ -63,22 +88,22 @@ function updateBox(node){
 }
 
 
-function updateGraph(shouldApply, wasClicked, address, filename){
+function updateGraph(shouldApply, wasClicked, address, json){
   if (working[address] === true){
     return;
   }
   working[address] = true;
-  if (address in expand_requests && layer_field.value === 0){
-    if (shouldApply){
-      applyGraphUpdates(address);
-    }
-    if (wasClicked){
-      updateBox(addressMap[address]);
-    }
-    working[address] = false;
-    return;
-  }
-  d3.json(filename, function(error, graph) {
+  // if (address in expand_requests && layer_field.value === 0){
+  //   if (shouldApply){
+  //     applyGraphUpdates(address);
+  //   }
+  //   if (wasClicked){
+  //     updateBox(addressMap[address]);
+  //   }
+  //   working[address] = false;
+  //   return;
+  // }
+  d3.json(json, function(error, graph) {
       console.log("original update");
     console.log(graph.nodes);
     console.log(graph.links);
@@ -113,6 +138,11 @@ function updateGraph(shouldApply, wasClicked, address, filename){
     var c = classifiers.indexOf(tempNode.classification)
     // console.log('got a color for a node: ' + c + ', with class: ' + tempNode.classification);
     var newNode = {size: tempNode.size, address: tempNode.address, color: c, id: id, label: tempNode.label, classification: tempNode.classification, total_received: tempNode.total_received, total_sent: tempNode.total_sent, balance: tempNode.balance};
+    var anchor = addressMap[address];
+    if (anchor !== undefined){
+      newNode.x = anchor.x;
+      newNode.y = anchor.y;
+    }
     // console.log(newNode);
     id += 1;
     // newNode.size = tempNode.size;
@@ -137,14 +167,14 @@ function updateGraph(shouldApply, wasClicked, address, filename){
   data.push(newLinks);
   expand_requests[address] = data
   currentColor += 1;
+  if (wasClicked){
+      updateBox(addressMap[address]);
+  }
   if (shouldApply){
       applyGraphUpdates(address);
   }
   else{
     restart();
-  }
-  if (wasClicked){
-      updateBox(addressMap[address]);
   }
   working[address] = false;
   });
@@ -152,9 +182,9 @@ function updateGraph(shouldApply, wasClicked, address, filename){
 
 function applyGraphUpdates(address){
   console.log("APPLYING");
-  if (address in applied_expands){
-    return;
-  }
+  // if (address in applied_expands){
+  //   return;
+  // }
   applied_expands[address] = 1;
   // console.log(expand_requests);
   // while(expand_requests[address] === undefined){
@@ -213,7 +243,7 @@ function getGrouping(address){
   }
   return null;
 }
-updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=0");
+updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=1");
 // updateGraph(true, false, "1GD3Sg3xcAzoc4V2SbkdTkFT9acio65Wr9" , "data?type=explore&address=1GD3Sg3xcAzoc4V2SbkdTkFT9acio65Wr9&layers=0&direction=0")
 // updateGraph(true, false, "16dJhwTJMgzzwydoB1gsYx4zkdrc4Ue8QY" , "data?type=explore&address=16dJhwTJMgzzwydoB1gsYx4zkdrc4Ue8QY&layers=0&direction=0")
 // updateGraph(true, false, "1EruyZfYWniAnw3PiKefTrRafyS4da5SJa" , "data?type=explore&address=1EruyZfYWniAnw3PiKefTrRafyS4da5SJa&layers=0&direction=0")
@@ -231,12 +261,12 @@ updateGraph(true, false, start_point, "data?type=explore&address=" + start_point
 // updateGraph(true, false, "1HFj8rcMxqDinBdGE4zpGXEMz9Cuqt8iVG" , "data?type=explore&address=1HFj8rcMxqDinBdGE4zpGXEMz9Cuqt8iVG&layers=0&direction=0")
 // setTimeout(function(){applyGraphUpdates("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg")}, 3000);
 
-function updateGroups(address, filename){
+function updateGroups(address, json){
   if (address in group_requests){
     return;
   }
   group_requests[address] = 1
-  d3.json(filename, function(error, graph) {
+  d3.json(json, function(error, graph) {
     //first update groupings
     var addrs = [];
     for (var i = 0; i < graph.nodes.length; i++){
@@ -298,7 +328,7 @@ function updateGroups(address, filename){
       links.splice(toRemove[i], 1);
     }
     // console.log("====================")
-    updateBox(address);
+    updateBox(addressMap[address]);
     restart();
   });
 }
@@ -427,6 +457,7 @@ function restart() {
 
   // update existing links
   path.classed('selected', function(d) { return d === selected_link; });
+  path.classed('hidden_element', function(d) { return shouldLinkHide(d)});
     // .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
     // .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; });
 
@@ -435,6 +466,7 @@ function restart() {
   path.enter().append('svg:path')
     .attr('class', 'link')
     .classed('selected', function(d) { return d === selected_link; })
+    .classed('hidden_element', function(d) { return shouldLinkHide(d)})
     // .style('marker-start', function(d) { return d.left ? 'url(#start-arrow)' : ''; })
     // .style('marker-end', function(d) { return d.right ? 'url(#end-arrow)' : ''; })
     .on('mousedown', function(d) {
@@ -462,11 +494,15 @@ function restart() {
   circle.selectAll('circle')
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
     .style('stroke', function(d) { return d3.rgb(colors(d.color)).darker().toString(); })
+    .classed('hidden_element', function(d) { return shouldNodeHide(d)})
     .attr('r', function(d){ return d.size })
     .append("title")
         .text(function(d){
           return getLabel(d);
         });
+    
+  circle.selectAll('text')
+      .text(function(d) { if (!shouldNodeHide(d)){ return d.id; } else {return "";}});
     // .classed('reflexive', function(d) { return d.reflexive; });
 
     // circle
@@ -479,6 +515,7 @@ function restart() {
     .attr('r', function(d){ return d.size })
     .style('fill', function(d) { return (d === selected_node) ? d3.rgb(colors(d.color)).brighter().toString() : colors(d.color); })
     .style('stroke', function(d) { return d3.rgb(colors(d.color)).darker().toString(); })
+    .classed('hidden_element', function(d) { return shouldNodeHide(d)})
     // .classed('reflexive', function(d) { return d.reflexive; })
     .on('mouseover', function(d) {
       // if(!mousedown_node || d === mousedown_node){
@@ -500,7 +537,7 @@ function restart() {
       // if(mousedown_node === selected_node) selected_node = null;
       selected_node = mousedown_node;
       if (selected_node.balance === undefined){
-        updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=0");
+        updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=1");
       }
       else{
         updateBox(selected_node);
@@ -572,7 +609,7 @@ function restart() {
       .attr('x', 0)
       .attr('y', 4)
       .attr('class', 'id')
-      .text(function(d) { return d.id; });
+      .text(function(d) { if (!shouldNodeHide(d)){ return d.id; } else {return "";}});
 
   // remove old nodes
   circle.exit().remove();
@@ -688,6 +725,9 @@ function keydown() {
       d3.event.preventDefault(); 
       window.open("https://blockchain.info/address/"+selected_node.address);
       break;
+    case 72: // H
+      changeNodeStatus(selected_node, true);
+      break;
     // case 8: // backspace
     // case 46: // delete
     //   if(selected_node) {
@@ -700,11 +740,20 @@ function keydown() {
     //   selected_node = null;
     //   restart();
     //   break;
-    case 69: //E
+    case 70: //F
       d3.event.preventDefault();
       var addr = selected_node.address;
       // alert(layer_fie  ld.value);
-      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=0";
+      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=1";
+      // alert(json);
+      updateGraph(true, false, addr, json);
+      // applyGraphUpdates(addr);
+      break;
+    case 66: //B
+      d3.event.preventDefault();
+      var addr = selected_node.address;
+      // alert(layer_fie  ld.value);
+      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=2";
       // alert(json);
       updateGraph(true, false, addr, json);
       // applyGraphUpdates(addr);

@@ -317,8 +317,8 @@ class DataHandler(webapp2.RequestHandler):
 				predicate = follow_entity
 			else:
 				predicate = (lambda a,b:True)
-
-			res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",layers=(num_layers),predicate=predicate,direction=(int(self.request.get("direction")) or 0))
+			direction = (int(self.request.get("direction")) or 0)
+			res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",layers=(num_layers),predicate=predicate,direction=direction)
 
 		except ValueError:
 			return self.response.out.write("Error: bad arguments")
@@ -326,7 +326,7 @@ class DataHandler(webapp2.RequestHandler):
 		if self.request.get("type") == "entity":
 			self.response.out.write(format.format_entity(res))
 		else:
-			self.response.out.write(format.addrs_to_graph(res))
+			self.response.out.write(format.addrs_to_graph(res, direction))
 
 class TempHandler(webapp2.RequestHandler):
     def get(self):
