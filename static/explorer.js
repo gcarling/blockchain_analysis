@@ -68,7 +68,7 @@ function updateGraph(shouldApply, wasClicked, address, filename){
     return;
   }
   working[address] = true;
-  if (address in expand_requests){
+  if (address in expand_requests && layer_field.value === 0){
     if (shouldApply){
       applyGraphUpdates(address);
     }
@@ -703,9 +703,9 @@ function keydown() {
     case 69: //E
       d3.event.preventDefault();
       var addr = selected_node.address;
-      alert(layer_field.value);
+      // alert(layer_fie  ld.value);
       var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=0";
-      alert(json);
+      // alert(json);
       updateGraph(true, false, addr, json);
       // applyGraphUpdates(addr);
       break;

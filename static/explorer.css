@@ -54,3 +54,58 @@ text.id {
   text-anchor: middle;
   font-weight: bold;
 }
+
+.type_holder{
+  margin-top: 30px;
+}
+
+.color_label{
+  height: 50px;
+  width: 50px;
+  display: inline;
+  margin-left: 20px;
+  margin-right: 20px;
+  font-size: 30px;
+}
+
+#cs{
+  color: #1f77b4;
+}
+
+#hs{
+  color: #ff7f0e;
+}
+
+#su{
+  color: #2ca02c;
+}
+
+#mp{
+  color: #d62728;
+}
+
+#ms{
+  color: #9467bd;
+}
+
+#ft{
+  color: #8c564b;
+}
+
+#ds{
+  color: #e377c2;
+}
+
+#uk{
+  color: #7f7f7f;
+}
+
+#ux{
+  color: #bcbd22;
+}
+
+button{
+  margin-left: 20px;
+  width: 50px;
+  height: 50px;
+}
