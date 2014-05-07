@@ -73,7 +73,7 @@
   </head>
   
   <body ng-app="simpleDirective">
-  <aside style="position:fixed;top:0px;left:0px;" id="asidectrl" ng-controller="AsideCtrl">
+  <aside id="asidectrl" ng-controller="AsideCtrl">
   		<div ng-repeat="line in obj">
   			<span> {[{line[0]}]}: {[{line[1]}]} </span>
   		</div>
@@ -81,13 +81,13 @@
       <span>Enter number of layers for iteration:</span>
       <input type="text" id="layer_field"/>
 
-      <div class="color_list" ng-repeat="x in color_labels">
-        <li>
+      <ul class="color_list">
+        <li ng-repeat="x in color_labels">
           <input type="checkbox" ng-checked="selection.indexOf(x[0]) > -1" ng-click="toggleSelection(x[0]);">
-            <span style="color:{[{x[2]}]};">{[{x[1]}]}</span>
+            <span class="color_label" style="color:{[{x[2]}]};">{[{x[1]}]}</span>
           </input>
         </li>
-      </div>
+      </ul>
   </aside>
   </body>
 

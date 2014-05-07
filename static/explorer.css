@@ -59,23 +59,29 @@ text.id {
   margin-top: 30px;
 }
 
+aside {
+  position:fixed;
+  top:10px;
+  left:10px;
+  border:1px solid #ccc;
+  padding:10px;
+}
+
 .color_list {
+  font-family: sans-serif; 
   list-style: none;
+  position:relative;
+  width:100%;
 }
-
+ul li:nth-child(2n) {
+  position:absolute;
+  left:200px;
+  margin-top:-25px;
+}
 .color_label{
-  font-weight:bold;
-  font-size:15px;
-  float:left;
+  font-size:20px;
   width:50px;
-  height:20px;
-
-button{
-  margin-left: 20px;
-  width: 50px;
-  height: 50px;
 }
-
 .hidden_element{
   fill: #000000;
   opacity: 0;
