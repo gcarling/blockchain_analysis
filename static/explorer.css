@@ -77,5 +77,6 @@ button{
 }
 
 .hidden_element{
-  display: none;
+  fill: #000000;
+  opacity: 0;
 }
