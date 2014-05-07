@@ -46,6 +46,9 @@ address_url = "http://blockchain.info/address/%s?format=json"
 class TooLargeError(Exception):
     pass
 
+class NonStandardTransactionError(Exception):
+	pass
+
 class Address:
 	def __init__(self,address,tx=None):
 		self.address = address
@@ -98,7 +101,6 @@ class Address:
 			type = (reduce((lambda a,b:a or b[0]==self.address),t.inputs,False),
 						reduce((lambda a,b:a or b[0]==self.address),t.outputs, False))
 
-			logging.debug(type)
 			for i in t.inputs:
 				if i[0] == self.address:
 					pass
@@ -137,6 +139,7 @@ def check_cache(address):
 	c = CachedRequest.gql("WHERE address = :1", address).get()
 	if c:
 		while not c.data and not c.data == "":
+			logging.debug("sleeping")
 			time.sleep(0.5)
 			c = CachedRequest.gql("WHERE address = :1", address).get()
 		#data = zlib.decompress(c.data)
@@ -189,9 +192,15 @@ def get_tx_list(address):
 			inputs = []
 		else:
 			inputs = map(lambda j:(j["prev_out"]["addr"],j["prev_out"]["value"]),tx["inputs"])
-		txs.append(TX(tx["hash"],
-			inputs,
-			map(lambda j:(j["addr"],j["value"],reverse_spent(j["spent"])),tx["out"]),tx["time"]))
+		try:
+			txs.append(TX(tx["hash"],
+				inputs,
+				map(lambda j:(j["addr"],j["value"],reverse_spent(j["spent"])),tx["out"]),
+				tx["time"]))
+		except KeyError:
+			#raise NonStandardTransactionError
+			pass
+
 	return txs
 
 def follow_entity(root,address):
@@ -199,6 +208,7 @@ def follow_entity(root,address):
 	only accept nodes with a single outgoing tx, and take the address with the non-round number
 	in addition, group all addresses that send in a shared transaction if one of the outputs is the same as one of the inputs
 	"""
+	logging.debug("should I follow %s ?" % address)
 	for tx in root.tx:
 		same = False
 		for o in tx.outputs:
@@ -209,35 +219,40 @@ def follow_entity(root,address):
 			# all the inputs should be grouped
 			for i in tx.inputs:
 				if i[0] == address:
+					logging.debug("yes! spent together")
 					return True
 
-	if len(root.sends_to) != 2:
-		return False
-		
 	amount = -1
 	for tx in root.tx:
+		# TIL for else 
 		for o in tx.outputs:
 			if o[0] not in root.sends_to:
+				break
+		else:
+			outputs = []
+			the_output = -1
+			for out in tx.outputs:
+				if out[0] == address:
+					the_output = out[1]
+				else:
+					outputs.append(out[1])
+			if the_output == -1:
 				continue
-		outputs = []
-		the_output = -1
-		for out in tx.outputs:
-			if out[0] == address:
-				the_output = out[1]
-			else:
-				outputs.append(out[1])
-		logging.debug("the: "+str(the_output))
-		logging.debug("the: "+str(outputs))
-		if more_round(the_output,outputs):
-			logging.debug("is not followed")
-			return False
+			logging.debug("the: "+str(the_output))
+			logging.debug("the: "+str(outputs))
+			if is_less_round(the_output,outputs):
+				logging.debug("is followed")
+				return True
 
-	logging.debug("is followed")
-	return True
+	logging.debug("is not followed")
+	return False
 
-def more_round(num,list_of_num):
+def is_less_round(num,list_of_num):
 	# return if that number has a higher percentage of zeros than the other numbers
-	return sorted(list_of_num+[num], key=lambda a:len(str(a).rstrip('0'))*1.0/len(str(a)))[0] == num
+	percent_not_zeros = (lambda a:len(str(a).rstrip('0'))*1.0/len(str(a)))
+	order = sorted(list_of_num+[num], key=percent_not_zeros)
+	order.reverse()
+	return order[0] == num and percent_not_zeros(str(num)+"0") > percent_not_zeros(str(order[1]))
 
 def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:True),explored=0):
 	"""
@@ -256,6 +271,10 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 		root = Address(address)
 		root.fill_tx(direction=direction)
 		root.calc()
+		logging.debug("findme2")
+		logging.debug(direction)
+		logging.debug(root.sends_to)
+		logging.debug(root.receives_from)
 	except TooLargeError:
 		logging.debug("caught too large, ignoring.")
 		return explored
@@ -265,16 +284,20 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 	if (max_nodes == None and layers == 0) or (max_nodes != None and len(explored) >= max_nodes):
 		logging.debug("exiting with max_nodes: %s and layers: %d and len(explored): %d" % (str(max_nodes), layers, len(explored)))
 		return explored
-	elif direction == 0 or direction == 1:
-		for out in root.sends_to:
-			if out not in explored and predicate(root,out) and not (max_nodes != None and len(explored) >= max_nodes):
-				explore(out,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored)
-	elif direction == 0 or direction == 2:
-		for inp in root.receives_from:
-			if inp not in explored and predicate(root,inp) and not (max_nodes != None and len(explored) >= max_nodes):
-				explore(inp,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored)
 	else:
-		logging.debug("bad! direction is: %s" % str(direction))
+		if direction == 0:
+			comb = set(list(root.sends_to)+list(root.receives_from))
+		elif direction == 1:
+			comb = root.sends_to
+		elif direction == 2:
+			comb = root.receives_from
+		else:
+			logging.debug("bad! direction is: %s" % str(direction))
+			comb = []
+	
+		for x in comb:
+			if predicate(root,x):
+				explore(x,layers-1,max_nodes=max_nodes,predicate=predicate,direction=direction,explored=explored)
 
 	return explored	
 
@@ -286,13 +309,15 @@ class DataHandler(webapp2.RequestHandler):
     def get(self):
 		try:
 			if self.request.get("layers") != None:
-					num_layers = int(self.request.get("layers"))
-				else:
-					num_layers = 0
+				num_layers = self.request.get("layers")
+			else:
+				num_layers = 0
+
 			if self.request.get("type") == "entity":
 				predicate = follow_entity
 			else:
 				predicate = (lambda a,b:True)
+
 			res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",layers=(num_layers),predicate=predicate,direction=(int(self.request.get("direction")) or 0))
 
 		except ValueError:
@@ -323,6 +348,29 @@ class TestHandler(webapp2.RequestHandler):
 			self.response.out.write("expecting %s got %s <br/>" % (str(expected[i][4]), str(output.sends_to)))
 			self.response.out.write("--")
 
+		self.response.out.write("<br/>")
+
+		addresses = ["1DirtycatzdoC8u8DaMsVjWFfYvyzawCGe"]
+		expected = [("1DirtycatzdoC8u8DaMsVjWFfYvyzawCGe","1GjV6jqBtER7B5Q4UxNhkNmnhyLZ2ypeuy","19ZPKhpcufZQWHKKhrte4ufvepg3ZG8Brp","1Bp6rSUS4GmraVYGRSeETeB1whMkJfp8hZ","19qMtjDT5b6pRPAXqwJDFQ6PMTfiTArGYt","17kNhYKkcyxFsorwD8dksZvsQjujJcCf1Z","1LFByrc6WfrfaRfmp8wpjXBxoQw2itv5ei",
+						"15js7RpQBevVy1d7VWYSo9NYRKDhNf7Vzw","14y7c6VAEgjuzo8D23rKX5BCEe7yKJBh22","1DjMhkEZk8H7qurPWkZiJTfisj5ALBr3tD","1BUjnseABZWtJGhNwz5zyrzFqMK3HJJS4Y","1ADnvaeeDPnDsLHX4Rg7kvHUVHEs14uzYG","1DFs1qRe441YeEYA2yjY5R7BLJchmWEvER","13PeYCq85MAN8CHxEwu7d8zPMn8aFostjW","1GVoc5hXwuswj6A6m3eovd1D3bjv5Wu1VP","1EeXLmMsib7Ln9GvjnhcLEzFjRCzzSdyqi","1LkXuX8VcGZcYJpPcZsD3WsWecUenMatBq","12m2ZKZdVv6bkJ4NxxpyLEroSRjw297m6G","1NxA9vmKfc4NQNDWRb81F6RBsdKSwX7upP","1NeyQ3Gz9XtDwZHLYPzGYEFYib5U6VWfBv","1NdExDKxy9UGgZFvWoLKryEDSLkvHiGqnN","15cLKc9SNL1AKe1e3yLKVCJ4CAMaqUmLM7","1LUu63oqAjHQSucVXYuuHJTrsd2D2GrFhe","1Ct15pzWFdZ9RvRdHVYNuFwXJA4qkR6owT","1J6qgkYcWWeyLr1AWTaBNtPNaQAHsc8x15", #""" 1H2kqMswmtrJUpGbAttDiLdn7aYnDMfjLd","13fvixKe9frKEawS6LWSBCTjMp8LEDoycv","1CKGKgUUyDRF3CBaz6YetMWiVGgmCC8Sm","16ppeDthYK6LNsnDTaHwHjSBEEt2FGQYmS","1PyqEcgBDMUfhYbxr9NfYkodTEwJQzFPtR","18gfVvp6cqPZgYwNMPvsPnsUGgUhxz5zzf","182N4weu7XGPmuc2GbswokYarq7r8rduWu","1PP8sWacFGepmQb7q71vvo1VkgUewWsTzd","198mPEzm9b3nDzgua47RtnyNTSUnfWySxh","1BoPpbRBBNvXWTGBiPQbSAfmVnvoaJMiBr","15UceBucJG8LEcPpHcPzQ2AcfTmfHr8Dv2","1LvwcupsBDAgayguzMHGGgw6HZy9a3Kanp","1EqiGFRXgBtwnuNzTULkgVUdBnjm9vK3XD","1LREyMuxP5akkkWVCew7nbJXJFzuQpGBZn", """ #past 50 tx mark
+						"1KLL4Xhxxi3Nviwr1Qzz1A5tgGeA3DNZKs",
+						"19TptEheMnzUtpX3thpEbNjttKY8aXCKqk")]
+
+		for i in range(0,len(addresses)):
+			output = explore(addresses[i], layers=1, predicate=follow_entity, direction=0)
+
+			e = list(expected[i])
+			for addr in output.iterkeys():
+				if addr in e:
+					self.response.out.write("expected and got: %s <br/>" % addr)
+					e.remove(addr)
+				else:
+					self.response.out.write("got unexpected: %s <br/>" % addr)
+			self.response.out.write("--<br/>")
+			for a in e:
+				self.response.out.write("expected but didn't get: %s<br/>" % a)
+
+
 class MassGroupHandler(webapp2.RequestHandler):
 	def get(self):
 		self.response.out.write("loading")
@@ -339,7 +387,6 @@ class MassGroupHandler(webapp2.RequestHandler):
 			out[g[0]] = [[],[]]
 			addrs = explore(g[0],max_nodes=10,predicate=follow_entity,direction=0)
 			for a in addrs.itervalues():
-				logging.debug(a)
 				out[g[0]][0] += list(a.sends_to)
 				out[g[0]][1] += list(a.receives_from)
 
