@@ -319,7 +319,10 @@ class DataHandler(webapp2.RequestHandler):
     def get(self):
 		try:
 			
+			logging.debug("a")
 			num_layers = int(self.request.get("layers")) or 0
+
+			logging.debug("b")
 
 			if self.request.get("type") == "entity":
 				predicate = follow_entity
@@ -328,16 +331,23 @@ class DataHandler(webapp2.RequestHandler):
 
 			direction = (int(self.request.get("direction")) or 0)
 
+			logging.debug("c")
+
 			logging.debug(self.request.get("max_connections"))
 			logging.debug(self.request.get("mbtc_threshold"))
 			if self.request.get("max_connections") not in [None,""]:
 				max_connections = int(self.request.get("max_connections"))
 			else:
 				max_connections = 100
+
+			logging.debug("d")
+
 			if self.request.get("mbtc_threshold") not in [None,""]:
 				mbtc_threshold = int(self.request.get("mbtc_threshold"))
 			else:
 				mbtc_threshold = 0.1
+
+			logging.debug("e")
 
 			res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",max_connections=max_connections,mbtc_threshold=mbtc_threshold,layers=num_layers,predicate=predicate,direction=direction)
 
