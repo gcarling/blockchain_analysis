@@ -67,7 +67,7 @@ aside {
   padding:10px;
   background-color:#F5F9FA;
   opacity:0.95;
-  /*width:350px;*/
+  width:350px !important;
 }
 
 .color_list {
@@ -87,7 +87,7 @@ ul li:nth-child(2n) {
 width: 40px;
 position: relative;
 top: 3px;
-text-shadow: 1px 1px #000;
+/*text-shadow: 1px 1px #000;*/
 }
 .hidden_element{
   fill: #000000;
