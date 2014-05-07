@@ -65,6 +65,9 @@ aside {
   left:10px;
   border:1px solid #ccc;
   padding:10px;
+  background-color:#fdfdfd;
+  opacity:0.9;
+  text-shadow:;
 }
 
 .color_list {
@@ -72,6 +75,7 @@ aside {
   list-style: none;
   position:relative;
   width:100%;
+  padding:0px;
 }
 ul li:nth-child(2n) {
   position:absolute;
@@ -80,7 +84,7 @@ ul li:nth-child(2n) {
 }
 .color_label{
   font-size:20px;
-  width:50px;
+  width:40px;
 }
 .hidden_element{
   display: none;
