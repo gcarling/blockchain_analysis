@@ -29,16 +29,16 @@
                      'total_sent':"Total Sent",
                      'balance':"Current Balance"};
 
-        $scope.color_labels = [['cs',"Cold Storage","#1f77b4"],
-                              ['hs',"Hot Storage","#ff7f0e"],
-                              ['su',"Single Use","#2ca02c"],
-                              ['mp',"Mining Pool","#d62728"],
-                              ['ms',"Mining Solo","#9467bd"],
-                              ['ft',"Faucet","#17becf"],
-                              ['ds',"Distributor","#e377c2"],
-                              ['ux',"Unexplored","#bcbd22"]];
+        $scope.color_labels = [['cold_storage',"Cold Storage","#1f77b4"],
+                              ['hot_storage',"Hot Storage","#ff7f0e"],
+                              ['single_use',"Single Use","#2ca02c"],
+                              ['mining_pool',"Mining Pool","#d62728"],
+                              ['mining_solo',"Mining Solo","#9467bd"],
+                              ['faucet',"Faucet","#17becf"],
+                              ['distributor',"Distributor","#e377c2"],
+                              ['unexplored',"Unexplored","#bcbd22"]];
 
-        $scope.selection = ['cs','hs','su','mp','ms','ft','dt','ux'];
+        $scope.selection = ['cold_storage','hot_storage','single_use','mining_pool','mining_solo','faucet','distributor','unexplored'];
 
         $scope.toggleSelection = function toggleSelection(item) {
           var idx = $scope.selection.indexOf(item);
