@@ -151,6 +151,10 @@ def check_cache(address):
 		c.put()
 		data = urlfetch.fetch(address_url % address).content
 
+		if len(data) > 900000:
+			c.data = ""
+			c.put()
+			raise TooLargeError
 		#c.data = zlib.compress(data.decode("utf-8"))
 		c.data = data
 		try:
