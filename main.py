@@ -319,7 +319,8 @@ class DataHandler(webapp2.RequestHandler):
     def get(self):
 		try:
 			
-			num_layers = int(self.request.get("layers")) or 0
+			num_layers = int(self.request.get("layers")) or 1
+			num_layers -= 1
 
 			if self.request.get("type") == "entity":
 				predicate = follow_entity

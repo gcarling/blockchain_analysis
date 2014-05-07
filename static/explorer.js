@@ -19,8 +19,8 @@ var id = 0;
 //auto update location only first time
 var first = true;
 var start_point = "1MfqytVkmEE67URYHRtkR3TpPEqxBorzMA";//"1DirtycatzdoC8u8DaMsVjWFfYvyzawCGe";
-var start_layers = 0;
-var start_connects = 10;
+var start_layers = 1;
+var start_connects = 20;
 var start_value = .1;
 var layer_field = document.getElementById("layer_field");
 layer_field.value = "" + start_layers;
@@ -77,6 +77,9 @@ function changeClassStatus(class_name, hide){
   if (class_name === "unexplored"){
     class_name = undefined;
   }
+  if (class_name === "blockchain_spam"){
+    class_name = null;
+  }
   class_statuses[class_name] = hide;
   restart();
 }
@@ -121,8 +124,14 @@ function updateGraph(shouldApply, wasClicked, address, json){
   //   return;
   // }
   d3.json(json, function(error, graph) {
-    console.log(graph.nodes);
-    console.log(graph.links);
+  if (graph.nodes.length === 0 && graph.links.length === 0){
+    if (address in addressMap){
+      addressMap[address].classification = null;
+    }
+    return;
+  }
+    // console.log(graph.nodes);
+    // console.log(graph.links);
   var offset = nodes.length;  
   // nodes = graph.nodes;
   // links = graph.links;
