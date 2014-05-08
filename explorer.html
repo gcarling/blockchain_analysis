@@ -21,6 +21,7 @@
 		})
     	.controller('AsideCtrl', ['$scope', function($scope) {
     		$scope.obj = [];
+        $scope.tx_ids = [];
 
         $scope.status = "Done.";
 
@@ -67,6 +68,11 @@
     				if (addr_obj.hasOwnProperty(attr) && addr_obj[attr] !== "") {
     					$scope.obj.push([$scope.human_readable[attr],addr_obj[attr]]);
     				}
+            if (addr_obj.hasOwnProperty("tx_ids")) {
+              $scope.tx_ids = addr_obj.tx_ids;
+            }
+            else
+              $scope.tx_ids = [];
     			}
     		}
     	}]);
@@ -93,6 +99,11 @@
   		<div ng-repeat="line in obj">
   			<span> {[{line[0]}]}: {[{line[1]}]} </span>
   		</div>
+      <span ng-show="tx_ids.length > 0">Transactions:</span>
+      <span ng-repeat="id in tx_ids">
+        <a target="_blank" href="https://blockchain.info/tx/{[{id}]}">{[{$index + 1}]}</a>
+      </span>
+      <span ng-show="tx_ids.length > 0"><br/></span>
       <br>
       <span>Enter number of layers for iteration:</span><br>
       <input type="text" placeholder=""id="layer_field"/>
