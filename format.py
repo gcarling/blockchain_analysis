@@ -3,6 +3,8 @@ import math
 import logging
 
 def addrs_to_graph(addresses, direction):
+	if 'error' in addresses:
+		return addresses
 	at = 0
 	node_map = {}
 	nodes = []
@@ -59,6 +61,7 @@ def addrs_to_graph(addresses, direction):
 
 #takes a list of addresses, and simply formats them as a list of nodes
 def format_entity(addresses):
+	logging.debug(addresses)
 	nodes = []
 	for addr in addresses.itervalues():
 		node = {'address': addr.address, 'label': addr.label}
@@ -66,7 +69,6 @@ def format_entity(addresses):
 
 	graph = {'nodes': nodes}
 
-	logging.debug('returning')
 	logging.debug(graph)
 
 	return json.dumps(graph, separators=(',',': '))
