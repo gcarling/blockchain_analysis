@@ -126,6 +126,8 @@ function updateLinkBox(link){
     addrB = link.target.address;
   }
   var data = {source: addrA, target: addrB};
+  addrA = link.source.address;
+  addrB = link.target.address;
   data.valueTo = Math.abs(value_tracker[[addrA, addrB]] / 100000) + " mBTC";
   data.valueFrom = Math.abs(value_tracker[[addrB, addrA]] / 100000.0) + " mBTC";
   var tup;
@@ -289,6 +291,7 @@ function applyGraphUpdates(address){
     var source = addressMap[newNodes[tempLink.source].address];
     var target = addressMap[newNodes[tempLink.target].address];
     var newLink = {source:source, target:target, linkNum:tempLink.linkNum};
+    console.log(tempLink);
     if ([source.address, target.address] in value_tracker){
       value_tracker[[source.address, target.address]] += tempLink.valueTo;
     }
