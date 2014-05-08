@@ -161,6 +161,10 @@ function updateGraph(shouldApply, wasClicked, address, json){
   //   return;
   // }
   d3.json(json, function(error, graph) {
+    if ('error' in graph){
+      alert("Error fetching data. Check all fields to be sure they are correct.");
+      return;
+    }
   if (graph.nodes.length === 0 && graph.links.length === 0){
     if (address in addressMap){
       addressMap[address].classification = "spam";
@@ -343,23 +347,35 @@ function getGrouping(address){
 
 window.onload = function () {
   updateStatus("Starting to load...");
-  updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=1&max_connections=" + start_connects + "&mbtc_threshold=" + start_value);  
+  var newAddr = prompt("Enter a new address:", '1CwrK8GTwq4eQYZwTxMpL271Bpj7Zu3PUQ');
+      addrs = newAddr.split(",");
+      for (newAddr in addrs){
+          newAddr = addrs[newAddr];
+          var json = "data?type=explore&address=" + newAddr + "&layers=0&direction=1";
+          updateGraph(true, false, newAddr, json);
+      }
+  // updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=1&max_connections=" + start_connects + "&mbtc_threshold=" + start_value);  
 };
       // updateGroups(addr, json));
 // setTimeout(function(){applyGraphUpdates("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg")}, 3000);
 
 function updateGroups(address, json){
-  if (address in group_requests){
-    return;
-  }
-  group_requests[address] = 1
+  updateStatus("Fetching...");
+  // if (address in group_requests){
+  //   return;
+  // }
+  // group_requests[address] = 1
   d3.json(json, function(error, graph) {
+    if ('error' in graph){
+      alert("Error fetching data. Check all fields to be sure they are correct.");
+      return;
+    }
     //first update groupings
     var addrs = [];
     for (var i = 0; i < graph.nodes.length; i++){
       addrs.push(graph.nodes[i].address);
     }    
-    // console.log(addrs);
+    console.log(addrs);
     var group = groupings[address];
     for (var i = 0; i < addrs.length; i++){
       if (group.indexOf(addrs[i]) === -1){
@@ -417,6 +433,7 @@ function updateGroups(address, json){
     // console.log("====================")
     updateNodeBox(addressMap[address]);
     restart();
+    updateStatus("Done.");
   });
 }
 
