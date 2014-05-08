@@ -21,6 +21,7 @@ import os
 import json
 from google.appengine.api import urlfetch
 from google.appengine.ext import db
+from google.appengine.runtime import DeadlineExceededError
 import logging
 import time
 import zlib
@@ -149,7 +150,13 @@ def check_cache(address):
 		c = CachedRequest()
 		c.address = address
 		c.put()
-		data = urlfetch.fetch(address_url % address).content
+		data = -1
+		while data == -1:
+			try:
+				data = urlfetch.fetch(address_url % address).content
+			except DeadlineExceededError:
+				data = -1
+				time.sleep(0.5)
 
 		if len(data) > 900000:
 			c.data = ""
@@ -286,6 +293,7 @@ def explore(address,layers=1,max_nodes=None,direction=0,predicate=(lambda a,b:Tr
 		root.calc()
 	except TooLargeError:
 		logging.debug("caught too large, ignoring.")
+
 		return explored
 
 	explored[address] = root
@@ -319,6 +327,9 @@ class DataHandler(webapp2.RequestHandler):
     def get(self):
 		try:
 			
+			if len(self.request.get("address")) < 28 or len(self.request.get("address")) > 34:
+				return self.response.out.write('{"error":"bad arguments"}')
+
 			num_layers = int(self.request.get("layers")) or 1
 			num_layers -= 1
 
@@ -343,7 +354,7 @@ class DataHandler(webapp2.RequestHandler):
 			res = explore(self.request.get("address") or "13dXiBv5228bqU5ZLM843YTxT7fWHZQEwH",max_connections=max_connections,mbtc_threshold=mbtc_threshold,layers=num_layers,predicate=predicate,direction=direction)
 
 		except ValueError:
-			return self.response.out.write("Error: bad arguments")
+			return self.response.out.write('{"error":"bad arguments"}')
 
 		if self.request.get("type") == "entity":
 			self.response.out.write(format.format_entity(res))
