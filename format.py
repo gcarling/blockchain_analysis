@@ -33,15 +33,22 @@ def addrs_to_graph(addresses, direction):
 				nodes.append(node)
 				node_map[connect] = at
 				at += 1
-			link = {'valueTo': 0, 'valueFrom': 0}
+			link = {'valueTo': 0, 'valueFrom': 0, 'num_tx': 0, 'tx_ids': []}
 			sender = node_map[addr.address]
 			target = node_map[connect]
 			for tx in addr.tx:
+				check = tx.address_balance(addr.address)
 				val = tx.address_balance(connect)
+				if check * val > 0:
+					continue
 				if val > 0:
-					link['valueTo'] += val
-				elif val < 0:
 					link['valueFrom'] += val
+				elif val < 0:
+					link['valueTo'] += val
+				else:
+					continue
+				link['num_tx'] += 1
+				link['tx_ids'].append(tx.id)
 
 			link['source'] = sender
 			link['target'] = target

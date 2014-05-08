@@ -31,10 +31,11 @@
                      'total_sent':"Total Sent",
                      'balance':"Current Balance",
 
-                     'source','Source',
-                    'target':'Destination',
-                    'valueTo':'Sent to Destination (mBTC)'
-                    'valueFrom':'Sent to Source (mBTC)'};
+                     'source':'Node A',
+                    'target':'Node B',
+                    'valueTo':'Sent from B to A',
+                    'valueFrom':'Sent from A to B',
+                    'num_tx':'Total Transactions'};
 
         $scope.color_labels = [['cold_storage',"Cold Storage","#1f77b4"],
                               ['hot_storage',"Hot Storage","#ff7f0e"],
@@ -63,7 +64,7 @@
     		$scope.update = function(addr_obj) {
     			$scope.obj = [];
     			for (attr in $scope.human_readable) {
-    				if (addr_obj.hasOwnProperty(attr) && addr_obj[attr] != "") {
+    				if (addr_obj.hasOwnProperty(attr) && addr_obj[attr] !== "") {
     					$scope.obj.push([$scope.human_readable[attr],addr_obj[attr]]);
     				}
     			}

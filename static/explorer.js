@@ -53,6 +53,9 @@ for (var i = 0; i < classifiers.length; i++){
 class_statuses["spam"] = true;
 //keeping track of values
 var value_tracker = {}
+//keep track of num tx and their ids
+var num_tx_tracker = {}
+var tx_id_tracker = {}
 
 //for scrolling
 function scroll(node){
@@ -111,8 +114,18 @@ function updateLinkBox(link){
   addrA = link.source.address;
   addrB = link.target.address;
   var data = {source: addrA, target: addrB};
-  data.valueTo = value_tracker[[addrA, addrB]];
-  data.valueFrom = value_tracker[[addrB, addrA]];
+  data.valueTo = Math.abs(value_tracker[[addrA, addrB]] / 100000) + " mBTC";
+  data.valueFrom = Math.abs(value_tracker[[addrB, addrA]] / 100000.0) + " mBTC";
+  var tup;
+  if (addrA < addrB){
+    tup = [addrA, addrB];
+  }
+  else{
+    tup = [addrB, addrA];
+  }
+  data.num_tx = num_tx_tracker[tup];
+  data.tx_ids = tx_id_tracker[tup];
+  console.log(data.valueFrom);
   updateAside(data);
 }
 
@@ -196,7 +209,7 @@ function updateGraph(shouldApply, wasClicked, address, json){
   for (var i = 0; i < graph.links.length; i++){
     var tempLink = graph.links[i];
     // console.log('from: ' + newLink.source.address + ', to: ' + newLink.target.address);
-    var newLink = {source:tempLink.source, target:tempLink.target, valueTo: tempLink.valueTo, valueFrom: tempLink.valueFrom};
+    var newLink = {source:tempLink.source, target:tempLink.target, valueTo: tempLink.valueTo, valueFrom: tempLink.valueFrom, num_tx: tempLink.num_tx, tx_ids: tempLink.tx_ids};
     newLinks.push(newLink);
   }
   var data = []
@@ -275,6 +288,21 @@ function applyGraphUpdates(address){
     }
     else{
       value_tracker[[target.address, source.address]] = tempLink.valueFrom;
+    }
+    var tup;
+    if (source.address < target.address){
+      tup = [source.address, target.address];
+    }
+    else{
+      tup = [target.address, source.address];
+    }
+    if (tup in num_tx_tracker){
+      num_tx_tracker[tup] += tempLink.num_tx;
+      tx_id_tracker[tup] = tx_id_tracker[tup].concat(tempLink.tx_ids);
+    }
+    else{
+      num_tx_tracker[tup] = tempLink.num_tx;
+      tx_id_tracker[tup] = tempLink.tx_ids;
     }
 
     links.push(newLink);
@@ -735,11 +763,14 @@ function keydown() {
   lastKeyDown = d3.event.keyCode;
   if (d3.event.keyCode == 32){
     d3.event.preventDefault();
-    if (!selected_node){
-      scroll(startNode);
+    if (selected_node){
+      scroll(selected_node);
+    }
+    else if (selected_link){
+      scroll(selected_link.source);
     }
     else{
-      scroll(selected_node);max
+      scroll(startNode);
     }
     return;
   }
@@ -768,9 +799,24 @@ function keydown() {
 
   switch(d3.event.keyCode) {
     case 73: // I
-      //prompt("Copy me!",selected_node.address);
-      d3.event.preventDefault(); 
-      window.open("https://blockchain.info/address/"+selected_node.address);
+      if (selected_node){
+        d3.event.preventDefault(); 
+        window.open("https://blockchain.info/address/"+selected_node.address);
+      }
+      else if (selected_link){
+        var a = selected_link.source.address;
+        var b = selected_link.target.address;
+        var tup;
+        if (a < b){
+          tup = [a,b];
+        }
+        else{
+          tup = [b,a];
+        }
+        var tx_ids = tx_id_tracker[tup];
+        var tx = tx_ids[0];
+        window.open("http://blockchain.info/tx/"+tx);
+      }
       break;
     case 72: // H
       changeNodeStatus(selected_node, true);
@@ -788,28 +834,34 @@ function keydown() {
     //   restart();
     //   break;
     case 70: //F
-      d3.event.preventDefault();
-      var addr = selected_node.address;
-      // alert(layer_fie  ld.value);
-      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=1&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
-      // alert(json);
-      updateGraph(true, false, addr, json);
-      // applyGraphUpdates(addr);
+      if (selected_node){
+        d3.event.preventDefault();
+        var addr = selected_node.address;
+        // alert(layer_fie  ld.value);
+        var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=1&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
+        // alert(json);
+        updateGraph(true, false, addr, json);
+        // applyGraphUpdates(addr);
+      }
       break;
     case 66: //B
-      d3.event.preventDefault();
-      var addr = selected_node.address;
-      // alert(layer_fie  ld.value);
-      var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=2&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
-      // alert(json);
-      updateGraph(true, false, addr, json);
-      // applyGraphUpdates(addr);
+      if (selected_node){
+        d3.event.preventDefault();
+        var addr = selected_node.address;
+        // alert(layer_fie  ld.value);
+        var json = "data?type=explore&address=" + addr + "&layers=" + layer_field.value + "&direction=2&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
+        // alert(json);
+        updateGraph(true, false, addr, json);
+        // applyGraphUpdates(addr);
+      }
       break;
     case 71: //G
-      d3.event.preventDefault();
-      var addr = selected_node.address;
-      var json = "data?type=entity&address=" + addr + "&layers=" + layer_field.value + "&direction=0&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
-      updateGroups(addr, json);
+      if (selected_node){
+        d3.event.preventDefault();
+        var addr = selected_node.address;
+        var json = "data?type=entity&address=" + addr + "&layers=" + layer_field.value + "&direction=0&max_connections=" + connection_field.value + "&mbtc_threshold=" + value_field.value;
+        updateGroups(addr, json);
+      }
       break;
     // case 66: // B
     //   if(selected_link) {
