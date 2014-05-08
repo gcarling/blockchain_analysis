@@ -30,7 +30,7 @@ var value_field = document.getElementById("value_field");
 value_field.value = start_value;
 
 //classification finder
-var classifiers = ["cold_storage","hot_storage","single_use","mining_pool","mining_solo",null,"distributor","unknown",undefined,"faucet"]
+var classifiers = ["cold_storage","hot_storage","single_use","mining_pool","mining_solo","spam","distributor","unknown",undefined,"faucet"]
 for (var i = 0; i < classifiers.length; i++){
   colors(i);
 }
@@ -50,6 +50,9 @@ var class_statuses = {}
 for (var i = 0; i < classifiers.length; i++){
   class_statuses[classifiers[i]] = false;
 }
+class_statuses["spam"] = true;
+//keeping track of values
+var value_tracker = {}
 
 //for scrolling
 function scroll(node){
@@ -77,9 +80,6 @@ function changeClassStatus(class_name, hide){
   if (class_name === "unexplored"){
     class_name = undefined;
   }
-  if (class_name === "blockchain_spam"){
-    class_name = null;
-  }
   class_statuses[class_name] = hide;
   restart();
 }
@@ -88,10 +88,10 @@ function changeClassStatus(class_name, hide){
 //  - reflexive edges are indicated on the node (as a bold black circle).
 //  - links are always source < target; edge directions are set by 'left' and 'right'.
 
-function updateBox(node){
+function updateNodeBox(node){
   var group = groupings[node.address];
   if (group === undefined){
-    update_aside(node);
+    updateAside(node);
     return;
   }
   // var addr = {total_received: node.total_received, classification: node.classification, label: node.label, balance: node.balance, total_sent: node.total_sent};
@@ -104,7 +104,16 @@ function updateBox(node){
     }
   }
   addr.address = associated;
-  update_aside(addr);
+  updateAside(addr);
+}
+
+function updateLinkBox(link){
+  addrA = link.source.address;
+  addrB = link.target.address;
+  var data = {source: addrA, target: addrB};
+  data.valueTo = value_tracker[[addrA, addrB]];
+  data.valueFrom = value_tracker[[addrB, addrA]];
+  updateAside(data);
 }
 
 
@@ -118,7 +127,7 @@ function updateGraph(shouldApply, wasClicked, address, json){
   //     applyGraphUpdates(address);
   //   }
   //   if (wasClicked){
-  //     updateBox(addressMap[address]);
+  //     updateNodeBox(addressMap[address]);
   //   }
   //   working[address] = false;
   //   return;
@@ -126,7 +135,9 @@ function updateGraph(shouldApply, wasClicked, address, json){
   d3.json(json, function(error, graph) {
   if (graph.nodes.length === 0 && graph.links.length === 0){
     if (address in addressMap){
-      addressMap[address].classification = null;
+      addressMap[address].classification = "spam";
+      addressMap[address].color = classifiers.indexOf("spam");
+      restart();
     }
     return;
   }
@@ -184,7 +195,7 @@ function updateGraph(shouldApply, wasClicked, address, json){
   for (var i = 0; i < graph.links.length; i++){
     var tempLink = graph.links[i];
     // console.log('from: ' + newLink.source.address + ', to: ' + newLink.target.address);
-    var newLink = {source:tempLink.source, target:tempLink.target, linkNum:tempLink.linkNum};
+    var newLink = {source:tempLink.source, target:tempLink.target, valueTo: tempLink.valueTo, valueFrom: tempLink.valueFrom};
     newLinks.push(newLink);
   }
   var data = []
@@ -193,7 +204,7 @@ function updateGraph(shouldApply, wasClicked, address, json){
   expand_requests[address] = data
   currentColor += 1;
   if (wasClicked){
-      updateBox(addressMap[address]);
+      updateNodeBox(addressMap[address]);
   }
   if (shouldApply){
       applyGraphUpdates(address);
@@ -251,6 +262,18 @@ function applyGraphUpdates(address){
     var source = addressMap[newNodes[tempLink.source].address];
     var target = addressMap[newNodes[tempLink.target].address];
     var newLink = {source:source, target:target, linkNum:tempLink.linkNum};
+    if ([source.address, target.address] in value_tracker){
+      value_tracker[[source.address, target.address]] += tempLink.valueTo;
+    }
+    else{
+      value_tracker[[source.address, target.address]] = tempLink.valueTo;
+    }
+    if ([target.address, source.address] in value_tracker){
+      value_tracker[[target.address, source.address]] += tempLink.valueFrom;
+    }
+    else{
+      value_tracker[[target.address, source.address]] = tempLink.valueFrom;
+    }
 
     links.push(newLink);
   }
@@ -343,7 +366,7 @@ function updateGroups(address, json){
       links.splice(toRemove[i], 1);
     }
     // console.log("====================")
-    updateBox(addressMap[address]);
+    updateNodeBox(addressMap[address]);
     restart();
   });
 }
@@ -492,9 +515,10 @@ function restart() {
 
       // select link
       mousedown_link = d;
-      if(mousedown_link === selected_link) selected_link = null;
-      else selected_link = mousedown_link;
+      // if(mousedown_link === selected_link) selected_link = null;
+      selected_link = mousedown_link;
       selected_node = null;
+      updateLinkBox(selected_link);
       restart();
     });
 
@@ -561,7 +585,7 @@ function restart() {
         updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=1");
       }
       else{
-        updateBox(selected_node);
+        updateNodeBox(selected_node);
       }
       selected_link = null;
 
