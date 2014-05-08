@@ -111,8 +111,20 @@ function updateNodeBox(node){
 }
 
 function updateLinkBox(link){
-  addrA = link.source.address;
-  addrB = link.target.address;
+  var addrA;
+  var addrB;
+  if (link.source.label !== ""){
+    addrA = link.source.label;
+  }
+  else{
+    addrA = link.source.address;
+  }
+  if (link.target.label !== ""){
+    addrB = link.target.label;
+  }
+  else{
+    addrB = link.target.address;
+  }
   var data = {source: addrA, target: addrB};
   data.valueTo = Math.abs(value_tracker[[addrA, addrB]] / 100000) + " mBTC";
   data.valueFrom = Math.abs(value_tracker[[addrB, addrA]] / 100000.0) + " mBTC";
@@ -615,7 +627,7 @@ function restart() {
       mousedown_node = d;
       // if(mousedown_node === selected_node) selected_node = null;
       selected_node = mousedown_node;
-      if (selected_node.balance === undefined){
+      if (selected_node.balance === undefined && selected_node.classification !== "spam"){
         updateGraph(false, true, d.address, "data?type=explore&address=" + d.address + "&layers=0&direction=1");
       }
       else{
