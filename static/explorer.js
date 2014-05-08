@@ -423,7 +423,9 @@ function updateGroups(address, json){
           }
         }
         //update node list
-        nodes.splice(nodes.indexOf(oldNode), 1);
+        if (oldNode.id !== node.id){
+          nodes.splice(nodes.indexOf(oldNode), 1);
+        }
       }
     }
     for (var i = 0; i < toRemove.length; i++){
@@ -811,7 +813,11 @@ function keydown() {
       var newAddr = prompt("Enter a new address:");
       if (newAddr !== ""){
         if (newAddr in addressMap){
-          alert("ALREADY EXISTS");
+          var n = addressMap[newAddr];
+          selected_node = n;
+          scroll(n);
+          updateNodeBox(n);
+          restart();
         }
         else{
           var json = "data?type=explore&address=" + newAddr + "&layers=0&direction=1";
