@@ -22,12 +22,19 @@
     	.controller('AsideCtrl', ['$scope', function($scope) {
     		$scope.obj = [];
 
+        $scope.status = "Done.";
+
     		$scope.human_readable = {'address':"Address",
     								 'label':"Blockchain.info Tag",
     								 'classification':"Classification",
     								 'total_received':"Total Received",
                      'total_sent':"Total Sent",
-                     'balance':"Current Balance"};
+                     'balance':"Current Balance",
+
+                     'source','Source',
+                    'target':'Destination',
+                    'valueTo':'Sent to Destination (mBTC)'
+                    'valueFrom':'Sent to Source (mBTC)'};
 
         $scope.color_labels = [['cold_storage',"Cold Storage","#1f77b4"],
                               ['hot_storage',"Hot Storage","#ff7f0e"],
@@ -63,11 +70,18 @@
     		}
     	}]);
 
-    var update_aside = function(addr_obj) {
+    var updateAside = function(addr_obj) {
     	var scope = angular.element(document.getElementById("asidectrl")).scope();
     	scope.$apply(function(){
     		scope.update(addr_obj);
     	});
+    };
+
+    var updateStatus = function(str) {
+      var scope = angular.element(document.getElementById("asidectrl")).scope();
+      scope.$apply(function(){
+        scope.status = str;
+      });
     };
 
     </script>
@@ -94,6 +108,8 @@
           </input>
         </li>
       </ul>
+      <hr/>
+      <div id="progress">{[{status}]}</div>
   </aside>
   </body>
 
