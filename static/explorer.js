@@ -112,6 +112,7 @@ function updateGraph(shouldApply, wasClicked, address, json){
   if (working[address] === true){
     return;
   }
+  updateStatus("Fetching...");
   working[address] = true;
   // if (address in expand_requests && layer_field.value === 0){
   //   if (shouldApply){
@@ -202,6 +203,7 @@ function updateGraph(shouldApply, wasClicked, address, json){
     restart();
   }
   working[address] = false;
+  updateStatus("Done!");
   });
 }
 
@@ -272,7 +274,11 @@ function getGrouping(address){
   }
   return null;
 }
-updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=1&max_connections=" + start_connects + "&mbtc_threshold=" + start_value);
+
+window.onload = function () {
+  updateStatus("Starting to load...");
+  updateGraph(true, false, start_point, "data?type=explore&address=" + start_point + "&layers=" + start_layers + "&direction=1&max_connections=" + start_connects + "&mbtc_threshold=" + start_value);  
+};
       // updateGroups(addr, json));
 // setTimeout(function(){applyGraphUpdates("13x2FVN4N6ahtbWCthKF3cArxrH9GJMNPg")}, 3000);
 

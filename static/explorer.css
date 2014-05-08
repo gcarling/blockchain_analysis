@@ -70,6 +70,10 @@ aside {
   width:350px !important;
 }
 
+#progress {
+  text-align:center;
+}
+
 .color_list {
   font-family: sans-serif; 
   list-style: none;
