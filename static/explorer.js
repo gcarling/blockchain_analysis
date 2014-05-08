@@ -250,11 +250,10 @@ function updateGraph(shouldApply, wasClicked, address, json){
 }
 
 function applyGraphUpdates(address){
-  console.log("APPLYING");
   // if (address in applied_expands){
   //   return;
   // }
-  applied_expands[address] = 1;
+  // applied_expands[address] = 1;
   // console.log(expand_requests);
   // while(expand_requests[address] === undefined){
 
@@ -328,6 +327,8 @@ function applyGraphUpdates(address){
   }
   console.log(nodes);
   console.log(links);
+  selected_node = addressMap[address];
+  updateNodeBox(addressMap[address]);
   restart();
   if (first){
     window.setTimeout(function(){scroll(addressMap[address])}, 1000);
