@@ -3,7 +3,7 @@
 <head>
     <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Assignment 3: Twitter Sentiment Classification</title>
+    <title>Final Project</title>
 </head>
 
 <body>
@@ -12,12 +12,42 @@
         <div class="col-md-2"></div>
         <div class="col-md-8">
             <div class="page-header center">
-                <h1>Assignment 3 <small>Twitter Sentiment Classification</small></h1>
+                <h1>Bitcoin Explorer <small>gcarling & jfedor</small></h1>
             </div>
 
-              
-            <h2>Investigating Classifiers</h2>
-			<p>
+	    <h2>Introduction</h2>
+
+		    <h3>Questions and Goals</h3>
+
+			    <p>How often do random people (to whom we can tie an identity)'s transactions overlap (spend to the same place)?</p>
+
+			    <p>Can we map a list of addresses to a single person based on following their spending and following of change (round numbers as generally not change, excepting in the case of buying USD-denominated purchases)</p>
+
+			    <p>Can we identify companies/banks/gambling sites' cold storage by the connections and large storage of lots of people's money?</p>
+		      
+            <h2>Backend</h2>
+	    	<p>The core of the explorer is written in python using Google AppEngine. The server makes requests to the blockchain.info API, and caches client-side results so that common requests aren't required to make the full query every time.</p>
+
+		<h3>Process</h3>
+
+			<ol>
+				<li>pull address from blockchain.info/tags (to find information about a specific online identity), or from a user-inputted address and grab list of transactions from blockchain.info api</li>
+				<li>for each transaction, follow forwards or backwards and recursively run the explorer while our constraints are held</li>
+				<li>constraints are either user-inputted, or specific functions that only follow addresses that are 'grouped' with the original by our system</li>
+			</ol>
+
+		<h3>Grouping</h3>
+
+			<p>Using a system of following the change, we can have a good guess of grouping addresses with a root. When a Bitcoin transaction is sent, an entire output (or multiple) must be spent, meaning that in almost every case, there's some leftover change that should be returned to the user. In some cases this change goes back to the original address, but in cases where new addresses are generated for change, we can assume that if the transaction fits our model, the change output is going to an address controlled by the original entity.</p>
+	
+			<p>When a transaction is sent, the amount sent is generally more round than the change. For example, if I have a balance of 314.159 mBTC, and I send 10 mBTC to someone, there will be one 10 mBTC output, and one 304.159 mBTC output. In this case, we assume that the rounder, smaller output is the actual output, and the less round number is the change. The address that the change now is in is grouped with the original.</p>
+
+		<h3>Classification</h3>
+
+			<p>In order to classify addresses, we use a decision tree based model. The possible labels are: Cold Storage, Hot Storage, Single Use, Mining Pool, Mining Solo, Faucet and Distributor. Based on known characteristics, looking at the transactions and spending/receiving history, we can make assumtions about the address. In the case where we aren't sure, it will be labeled Unknown or Hot Storage (the same for a typical online bitcoin address).</p>
+
+			<p>This model has very high accuracy, as the defintions of these terms were basically built into the tree. In some strange cases where the address is a mixture, for example if the node is both a miner and a faucet, we will just return one, but these cases happen very rarely.</p>
+
             
 			
 
